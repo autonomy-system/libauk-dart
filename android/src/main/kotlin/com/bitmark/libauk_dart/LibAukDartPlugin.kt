@@ -205,7 +205,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val to: String = call.argument("to") ?: error("missing recipient")
         val value: String = call.argument("value") ?: "0"
         val data: String = call.argument("data") ?: ""
-        val chainId: Long = call.argument("chainId") ?: 0L
+        val chainId: Int = call.argument("chainId") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
             BigInteger(nonce),
             BigInteger(gasPrice),
@@ -216,7 +216,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         )
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .signTransaction(rawTransaction, chainId)
+            .signTransaction(rawTransaction, chainId.toLong())
             .subscribe({ bytes ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
