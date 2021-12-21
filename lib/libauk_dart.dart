@@ -56,7 +56,7 @@ class WalletStorage {
   }
 
   Future<String> signPersonalMessage(Uint8List bytes) async {
-    Map res = await _channel.invokeMethod('signPersonalMessage', {"uuid": uuid, "messaage": bytes});
+    Map res = await _channel.invokeMethod('signPersonalMessage', {"uuid": uuid, "message": bytes});
 
     return res["data"];
   }
