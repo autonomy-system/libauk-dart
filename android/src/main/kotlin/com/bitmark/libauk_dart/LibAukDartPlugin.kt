@@ -205,7 +205,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val to: String = call.argument("to") ?: error("missing recipient")
         val value: String = call.argument("value") ?: "0"
         val data: String = call.argument("data") ?: ""
-        val chainId: Long = call.argument("data") ?: 0L
+        val chainId: Long = call.argument("chainId") ?: 0L
         val rawTransaction = RawTransaction.createTransaction(
             BigInteger(nonce),
             BigInteger(gasPrice),

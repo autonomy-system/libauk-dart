@@ -61,9 +61,24 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<Uint8List> signTransaction() async {
+  Future<Uint8List> signTransaction({
+    required int nonce,
+    required BigInt gasPrice,
+    required BigInt gasLimit,
+    required String to,
+    required BigInt value,
+    required String data,
+    required int chainId,
+  }) async {
     Map res = await _channel.invokeMethod('signTransaction', {
       "uuid": uuid,
+      "nonce": nonce.toString(),
+      "gasPrice": gasPrice.toString(),
+      "gasLimit": gasLimit.toString(),
+      "to": to,
+      "value": value.toString(),
+      "data": data,
+      "chainId": chainId
     });
 
     return res["data"];
