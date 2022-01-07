@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
       print(uuid);
       var storage = LibAukDart.getWallet(uuid);
       await storage.createKey("Hello");
-      address = await storage.getETHAddress();
+      address = (await storage.getTezosWallet()).address;
     } on PlatformException {
       address = 'Failed to get Address.';
     }

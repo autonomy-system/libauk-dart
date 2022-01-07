@@ -1,19 +1,15 @@
-
 import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
 
 class LibAukDart {
-
   static WalletStorage getWallet(String uuid) {
     return WalletStorage(uuid);
   }
 }
 
 class WalletStorage {
-
   static const MethodChannel _channel = const MethodChannel('libauk_dart');
 
   final String uuid;
@@ -56,7 +52,8 @@ class WalletStorage {
   }
 
   Future<String> signPersonalMessage(Uint8List bytes) async {
-    Map res = await _channel.invokeMethod('signPersonalMessage', {"uuid": uuid, "message": bytes});
+    Map res = await _channel
+        .invokeMethod('signPersonalMessage', {"uuid": uuid, "message": bytes});
 
     return res["data"];
   }
@@ -85,12 +82,31 @@ class WalletStorage {
   }
 
   Future<String> exportMnemonicWords() async {
-    Map res = await _channel.invokeMethod('exportMnemonicWords', {"uuid": uuid});
+    Map res =
+        await _channel.invokeMethod('exportMnemonicWords', {"uuid": uuid});
 
     return res["data"];
+  }
+
+  Future<TezosWallet> getTezosWallet() async {
+    Map res = await _channel.invokeMethod('getTezosWallet', {"uuid": uuid});
+
+    final String address = res["address"];
+    final Uint8List secretKey = res["secretKey"];
+    final Uint8List publicKey = res["publicKey"];
+
+    return TezosWallet(address, secretKey, publicKey);
   }
 
   Future<void> removeKeys() async {
     await _channel.invokeMethod('removeKeys', {"uuid": uuid});
   }
+}
+
+class TezosWallet {
+  final String address;
+  final Uint8List secretKey;
+  final Uint8List publicKey;
+
+  TezosWallet(this.address, this.secretKey, this.publicKey);
 }

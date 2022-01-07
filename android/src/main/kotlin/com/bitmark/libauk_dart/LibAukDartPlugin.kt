@@ -60,6 +60,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
+            "getTezosWallet" -> {
+                getTezosWallet(call, result)
+            }
             "removeKeys" -> {
                 removeKeys(call, result)
             }
@@ -239,6 +242,25 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 rev["error"] = 0
                 rev["msg"] = "exportMnemonicWords success"
                 rev["data"] = words
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicWords error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun getTezosWallet(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .getTezosWallet()
+            .subscribe({ wallet ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["msg"] = "exportMnemonicWords success"
+                rev["address"] = wallet.mainAddress
+                rev["secretKey"] = wallet.secretKey.bytes
+                rev["publicKey"] = wallet.publicKey.bytes
                 result.success(rev)
             }, {
                 it.printStackTrace()
