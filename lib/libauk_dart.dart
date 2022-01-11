@@ -92,8 +92,8 @@ class WalletStorage {
     Map res = await _channel.invokeMethod('getTezosWallet', {"uuid": uuid});
 
     final String address = res["address"];
-    final Uint8List secretKey = res["secretKey"];
-    final Uint8List publicKey = res["publicKey"];
+    final String secretKey = res["secretKey"];
+    final String publicKey = res["publicKey"];
 
     return TezosWallet(address, secretKey, publicKey);
   }
@@ -105,8 +105,8 @@ class WalletStorage {
 
 class TezosWallet {
   final String address;
-  final Uint8List secretKey;
-  final Uint8List publicKey;
+  final String secretKey;
+  final String publicKey;
 
   TezosWallet(this.address, this.secretKey, this.publicKey);
 }

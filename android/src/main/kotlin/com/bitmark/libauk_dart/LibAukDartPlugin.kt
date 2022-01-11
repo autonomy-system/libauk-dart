@@ -259,8 +259,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 rev["error"] = 0
                 rev["msg"] = "exportMnemonicWords success"
                 rev["address"] = wallet.mainAddress
-                rev["secretKey"] = wallet.secretKey.bytes
-                rev["publicKey"] = wallet.publicKey.bytes
+                rev["secretKey"] = wallet.secretKey.base58Representation
+                rev["publicKey"] = wallet.publicKey.base58Representation
                 result.success(rev)
             }, {
                 it.printStackTrace()
