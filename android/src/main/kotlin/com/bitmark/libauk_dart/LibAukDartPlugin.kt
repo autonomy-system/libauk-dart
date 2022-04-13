@@ -48,6 +48,12 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "updateName" -> {
                 updateName(call, result)
             }
+            "getAccountDID" -> {
+                getAccountDID(call, result)
+            }
+            "getAccountDIDSignature" -> {
+                getAccountDIDSignature(call, result)
+            }
             "getETHAddress" -> {
                 getETHAddress(call, result)
             }
@@ -160,6 +166,42 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
                 rev["msg"] = "updateName success"
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("updateName error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun getAccountDID(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .getAccountDID()
+            .subscribe({ accountDID ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["msg"] = "getAccountDID success"
+                rev["data"] = accountDID
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("updateName error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun getAccountDIDSignature(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val message: String = call.argument("message") ?: ""
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .getAccountDIDSignature(message)
+            .subscribe({ signature ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["msg"] = "getAccountDIDSignature success"
+                rev["data"] = signature
                 result.success(rev)
             }, {
                 it.printStackTrace()
