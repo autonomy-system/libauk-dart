@@ -45,6 +45,18 @@ class WalletStorage {
     await _channel.invokeMethod('updateName', {"uuid": uuid, "name": name});
   }
 
+  Future<String> getAccountDID() async {
+    Map res = await _channel.invokeMethod('getAccountDID', {"uuid": uuid});
+
+    return res["data"];
+  }
+
+  Future<String> getAccountDIDSignature(String message) async {
+    Map res = await _channel.invokeMethod('getAccountDIDSignature', {"uuid": uuid, "message": message});
+
+    return res["data"];
+  }
+
   Future<String> getETHAddress() async {
     Map res = await _channel.invokeMethod('getETHAddress', {"uuid": uuid});
 
