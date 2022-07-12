@@ -52,7 +52,8 @@ class WalletStorage {
   }
 
   Future<String> getAccountDIDSignature(String message) async {
-    Map res = await _channel.invokeMethod('getAccountDIDSignature', {"uuid": uuid, "message": message});
+    Map res = await _channel.invokeMethod(
+        'getAccountDIDSignature', {"uuid": uuid, "message": message});
 
     return res["data"];
   }
@@ -143,6 +144,34 @@ class WalletStorage {
   Future<void> removeKeys() async {
     await _channel.invokeMethod('removeKeys', {"uuid": uuid});
   }
+
+  Future setupSSKR() async {
+    await _channel.invokeMethod('setupSSKR', {"uuid": uuid});
+  }
+
+  Future<String?> getShard(ShardType shardType) async {
+    Map res = await _channel.invokeMethod(
+        'getShard', {'uuid': uuid, 'shardType': shardType.intValue});
+    return res["data"];
+  }
+
+  Future removeShard(ShardType shardType) async {
+    await _channel.invokeMethod(
+        'removeShard', {"uuid": uuid, 'shardType': shardType.intValue});
+  }
+
+  Future restoreByBytewordShards(
+    List<String> shards, {
+    String? name,
+    DateTime? creationDate,
+  }) async {
+    await _channel.invokeMethod('restoreByBytewordShards', {
+      "uuid": uuid,
+      'shares': shards,
+      'name': name,
+      'date': creationDate?.millisecondsSinceEpoch
+    });
+  }
 }
 
 class TezosWallet {
@@ -151,4 +180,19 @@ class TezosWallet {
   final Uint8List publicKey;
 
   TezosWallet(this.address, this.secretKey, this.publicKey);
+}
+
+enum ShardType { Platform, ShardService, EmergencyContact }
+
+extension ShardTypeExtension on ShardType {
+  int get intValue {
+    switch (this) {
+      case ShardType.Platform:
+        return 0;
+      case ShardType.ShardService:
+        return 1;
+      case ShardType.EmergencyContact:
+        return 2;
+    }
+  }
 }
