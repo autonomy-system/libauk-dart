@@ -2,10 +2,15 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
+import 'package:libauk_dart/general_storage.dart';
 
 class LibAukDart {
   static WalletStorage getWallet(String uuid) {
     return WalletStorage(uuid);
+  }
+
+  static GeneralStorage general() {
+    return GeneralStorage();
   }
 }
 
@@ -150,9 +155,13 @@ class WalletStorage {
   }
 
   Future<String?> getShard(ShardType shardType) async {
-    Map res = await _channel.invokeMethod(
-        'getShard', {'uuid': uuid, 'shardType': shardType.intValue});
-    return res["data"];
+    try {
+      Map res = await _channel.invokeMethod(
+          'getShard', {'uuid': uuid, 'shardType': shardType.intValue});
+      return res["data"];
+    } catch (_) {
+      return null;
+    }
   }
 
   Future removeShard(ShardType shardType) async {
