@@ -9,8 +9,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import org.web3j.crypto.RawTransaction
+import java.io.File
 import java.math.BigInteger
 import java.util.*
 
@@ -62,6 +65,12 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }
             "signTransaction" -> {
                 signTransaction(call, result)
+            }
+            "encryptFile" -> {
+                encryptFile(call, result)
+            }
+            "decryptFile" -> {
+                decryptFile(call, result)
             }
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
@@ -276,6 +285,44 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.error("signTransaction error", it.message, it)
             })
             .let { disposables.add(it) }
+    }
+
+    private fun encryptFile(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val inputPath: String = call.argument("inputPath") ?: ""
+        val outputPath: String = call.argument("outputPath") ?: ""
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .encryptFile(File(inputPath), File(outputPath))
+            .subscribeOn(Schedulers.computation())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["msg"] = "Encrypt file success"
+                rev["data"] = outputPath
+                result.success(rev)
+            }, { error ->
+                result.error("Encrypt file failed", error.message, error)
+            }).let { disposables.add(it) }
+    }
+
+    private fun decryptFile(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val inputPath: String = call.argument("inputPath") ?: ""
+        val outputPath: String = call.argument("outputPath") ?: ""
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .decryptFile(File(inputPath), File(outputPath))
+            .subscribeOn(Schedulers.computation())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["msg"] = "Decrypt file success"
+                rev["data"] = outputPath
+                result.success(rev)
+            }, { error ->
+                result.error("Decrypt file failed", error.message, error)
+            }).let { disposables.add(it) }
     }
 
     private fun exportMnemonicWords(call: MethodCall, result: Result) {
