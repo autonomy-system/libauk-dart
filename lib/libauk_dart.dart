@@ -93,6 +93,30 @@ class WalletStorage {
     return res["data"];
   }
 
+  Future<String> encryptFile({
+    required String inputPath,
+    required String outputPath,
+  }) async {
+    Map res = await _channel.invokeMethod('encryptFile', {
+      "uuid": uuid,
+      "inputPath": inputPath,
+      "outputPath": outputPath,
+    });
+    return res["data"];
+  }
+
+  Future<String> decryptFile({
+    required String inputPath,
+    required String outputPath,
+  }) async {
+    Map res = await _channel.invokeMethod('decryptFile', {
+      "uuid": uuid,
+      "inputPath": inputPath,
+      "outputPath": outputPath,
+    });
+    return res["data"];
+  }
+
   Future<String> exportMnemonicWords() async {
     Map res =
         await _channel.invokeMethod('exportMnemonicWords', {"uuid": uuid});
