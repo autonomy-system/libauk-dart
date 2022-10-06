@@ -131,7 +131,7 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<Uint8List> tezosSignMessage(String message) async {
+  Future<Uint8List> tezosSignMessage(Uint8List message) async {
     Map res = await _channel
         .invokeMethod('tezosSignMessage', {"uuid": uuid, "message": message});
 
