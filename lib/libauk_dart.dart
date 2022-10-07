@@ -52,7 +52,8 @@ class WalletStorage {
   }
 
   Future<String> getAccountDIDSignature(String message) async {
-    Map res = await _channel.invokeMethod('getAccountDIDSignature', {"uuid": uuid, "message": message});
+    Map res = await _channel.invokeMethod(
+        'getAccountDIDSignature', {"uuid": uuid, "message": message});
 
     return res["data"];
   }
@@ -63,14 +64,14 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<String> signPersonalMessage(Uint8List bytes) async {
-    Map res = await _channel
-        .invokeMethod('signPersonalMessage', {"uuid": uuid, "message": bytes});
+  Future<String> ethSignPersonalMessage(Uint8List bytes) async {
+    Map res = await _channel.invokeMethod(
+        'ethSignPersonalMessage', {"uuid": uuid, "message": bytes});
 
     return res["data"];
   }
 
-  Future<Uint8List> signTransaction({
+  Future<Uint8List> ethSignTransaction({
     required int nonce,
     required BigInt gasPrice,
     required BigInt gasLimit,
@@ -79,7 +80,7 @@ class WalletStorage {
     required String data,
     required int chainId,
   }) async {
-    Map res = await _channel.invokeMethod('signTransaction', {
+    Map res = await _channel.invokeMethod('ethSignTransaction', {
       "uuid": uuid,
       "nonce": nonce.toString(),
       "gasPrice": gasPrice.toString(),
@@ -124,14 +125,24 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<TezosWallet> getTezosWallet() async {
-    Map res = await _channel.invokeMethod('getTezosWallet', {"uuid": uuid});
+  Future<String> getTezosPublicKey() async {
+    Map res = await _channel.invokeMethod('getTezosPublicKey', {"uuid": uuid});
 
-    final String address = res["address"];
-    final Uint8List secretKey = res["secretKey"];
-    final Uint8List publicKey = res["publicKey"];
+    return res["data"];
+  }
 
-    return TezosWallet(address, secretKey, publicKey);
+  Future<Uint8List> tezosSignMessage(Uint8List message) async {
+    Map res = await _channel
+        .invokeMethod('tezosSignMessage', {"uuid": uuid, "message": message});
+
+    return res["data"];
+  }
+
+  Future<Uint8List> tezosSignTransaction(String forgedHex) async {
+    Map res = await _channel.invokeMethod(
+        'tezosSignTransaction', {"uuid": uuid, "forgedHex": forgedHex});
+
+    return res["data"];
   }
 
   Future<String> getBitmarkAddress() async {
@@ -143,12 +154,4 @@ class WalletStorage {
   Future<void> removeKeys() async {
     await _channel.invokeMethod('removeKeys', {"uuid": uuid});
   }
-}
-
-class TezosWallet {
-  final String address;
-  final Uint8List secretKey;
-  final Uint8List publicKey;
-
-  TezosWallet(this.address, this.secretKey, this.publicKey);
 }

@@ -60,10 +60,10 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "getETHAddress" -> {
                 getETHAddress(call, result)
             }
-            "signPersonalMessage" -> {
+            "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
             }
-            "signTransaction" -> {
+            "ethSignTransaction" -> {
                 signTransaction(call, result)
             }
             "encryptFile" -> {
@@ -75,8 +75,14 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
-            "getTezosWallet" -> {
-                getTezosWallet(call, result)
+            "getTezosPublicKey" -> {
+                getTezosPublicKey(call, result)
+            }
+            "tezosSignMessage" -> {
+                tezosSignMessage(call, result)
+            }
+            "tezosSignTransaction" -> {
+                tezosSignTransaction(call, result)
             }
             "getBitmarkAddress" -> {
                 getBitmarkAddress(call, result)
@@ -139,7 +145,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "isWalletCreated success"
                 rev["data"] = it
                 result.success(rev)
             }, {
@@ -156,7 +161,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "getName success"
                 rev["data"] = it
                 result.success(rev)
             }, {
@@ -191,7 +195,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({ accountDID ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "getAccountDID success"
                 rev["data"] = accountDID
                 result.success(rev)
             }, {
@@ -209,7 +212,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({ signature ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "getAccountDIDSignature success"
                 rev["data"] = signature
                 result.success(rev)
             }, {
@@ -226,7 +228,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({ address ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "getETHAddress success"
                 rev["data"] = address
                 result.success(rev)
             }, {
@@ -240,11 +241,10 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .signPersonalMessage(message)
+            .ethSignPersonalMessage(message)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "getETHAddress success"
                 rev["data"] = "0x" + sigData.r.toHex() + sigData.s.toHex() + sigData.v.toHex()
                 result.success(rev)
             }, {
@@ -273,11 +273,10 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         )
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .signTransaction(rawTransaction, chainId.toLong())
+            .ethSignTransaction(rawTransaction, chainId.toLong())
             .subscribe({ bytes ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "signTransaction success"
                 rev["data"] = bytes
                 result.success(rev)
             }, {
@@ -298,7 +297,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "Encrypt file success"
                 rev["data"] = outputPath
                 result.success(rev)
             }, { error ->
@@ -317,7 +315,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "Decrypt file success"
                 rev["data"] = outputPath
                 result.success(rev)
             }, { error ->
@@ -332,7 +329,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({ words ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "exportMnemonicWords success"
                 rev["data"] = words
                 result.success(rev)
             }, {
@@ -342,17 +338,50 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun getTezosWallet(call: MethodCall, result: Result) {
+    private fun getTezosPublicKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .getTezosWallet()
-            .subscribe({ wallet ->
+            .getTezosPublicKey()
+            .subscribe({ publicKey ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "exportMnemonicWords success"
-                rev["address"] = wallet.mainAddress
-                rev["secretKey"] = wallet.secretKey.bytes
-                rev["publicKey"] = wallet.publicKey.bytes
+                rev["data"] = publicKey
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicWords error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun tezosSignMessage(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val message: ByteArray = call.argument("message") ?: error("missing message")
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .tezosSignMessage(message)
+            .subscribe({ data ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = data
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicWords error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun tezosSignTransaction(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val forgedHex: String = call.argument("forgedHex") ?: error("missing message")
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .tezosTransaction(forgedHex)
+            .subscribe({ data ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = data
                 result.success(rev)
             }, {
                 it.printStackTrace()
@@ -368,7 +397,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .subscribe({ address ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["msg"] = "getBitmarkAddress success"
                 rev["data"] = address
                 result.success(rev)
             }, {
