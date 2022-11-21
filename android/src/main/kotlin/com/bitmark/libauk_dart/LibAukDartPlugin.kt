@@ -13,6 +13,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import org.web3j.crypto.RawTransaction
+import org.web3j.crypto.Sign
 import java.io.File
 import java.math.BigInteger
 import java.util.*
@@ -62,6 +63,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }
             "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
+            }
+            "ethSignMessage" -> {
+                signMessage(call, result)
             }
             "ethSignTransaction" -> {
                 signTransaction(call, result)
@@ -237,11 +241,28 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
+    private fun signMessage(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val message: ByteArray = call.argument("message") ?: error("missing message")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .ethSignMessage(message, true)
+            .subscribe({ sigData ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = "0x" + sigData.r.toHex() + sigData.s.toHex() + sigData.v.toHex()
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("signPersonalMessage error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
     private fun signPersonalMessage(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignPersonalMessage(message)
+            .ethSignMessage(message.ethPersonalMessage(), false)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -438,3 +459,5 @@ fun ByteArray.toHex(): String {
 
     return result.toString()
 }
+
+fun ByteArray.ethPersonalMessage() = Sign.getEthereumMessageHash(this)
