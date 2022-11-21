@@ -71,6 +71,13 @@ class WalletStorage {
     return res["data"];
   }
 
+  Future<String> ethSignMessage(Uint8List bytes) async {
+    Map res = await _channel.invokeMethod(
+        'ethSignMessage', {"uuid": uuid, "message": bytes});
+
+    return res["data"];
+  }
+
   Future<Uint8List> ethSignTransaction({
     required int nonce,
     required BigInt gasPrice,
