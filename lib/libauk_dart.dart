@@ -111,7 +111,7 @@ class WalletStorage {
     required String data,
     required int chainId,
   }) async {
-    Map res = await _channel.invokeMethod('ethSignTransaction', {
+    Map res = await _channel.invokeMethod('ethSignTransaction1559', {
       "uuid": uuid,
       "nonce": nonce.toString(),
       "gasLimit": gasLimit.toString(),
