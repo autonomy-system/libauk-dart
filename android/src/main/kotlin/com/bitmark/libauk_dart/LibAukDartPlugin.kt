@@ -318,7 +318,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val data: String = call.argument("data") ?: ""
         val chainId: Int = call.argument("chainId") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
-            chainId,
+            chainId.toLong(),
             BigInteger(nonce),
             BigInteger(gasLimit),
             to,
