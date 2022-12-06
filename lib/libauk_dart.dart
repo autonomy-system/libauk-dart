@@ -152,12 +152,6 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<String> getBitmarkAddress() async {
-    Map res = await _channel.invokeMethod('getBitmarkAddress', {"uuid": uuid});
-
-    return res["data"];
-  }
-
   Future<void> removeKeys() async {
     await _channel.invokeMethod('removeKeys', {"uuid": uuid});
   }

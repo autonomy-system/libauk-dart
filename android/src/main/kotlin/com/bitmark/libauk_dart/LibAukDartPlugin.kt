@@ -88,9 +88,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "tezosSignTransaction" -> {
                 tezosSignTransaction(call, result)
             }
-            "getBitmarkAddress" -> {
-                getBitmarkAddress(call, result)
-            }
             "removeKeys" -> {
                 removeKeys(call, result)
             }
@@ -403,22 +400,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
                 rev["data"] = data
-                result.success(rev)
-            }, {
-                it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
-            })
-            .let { disposables.add(it) }
-    }
-
-    private fun getBitmarkAddress(call: MethodCall, result: Result) {
-        val id: String? = call.argument("uuid")
-        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .getBitmarkAddress()
-            .subscribe({ address ->
-                val rev: HashMap<String, Any> = HashMap()
-                rev["error"] = 0
-                rev["data"] = address
                 result.success(rev)
             }, {
                 it.printStackTrace()
