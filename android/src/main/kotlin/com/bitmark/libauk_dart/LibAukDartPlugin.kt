@@ -70,6 +70,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "ethSignTransaction" -> {
                 signTransaction(call, result)
             }
+            "ethSignTransaction1559" -> {
+                signTransaction1559(call, result)
+            }
             "encryptFile" -> {
                 encryptFile(call, result)
             }
@@ -288,6 +291,41 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             to,
             BigInteger(value),
             data
+        )
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .ethSignTransaction(rawTransaction, chainId.toLong())
+            .subscribe({ bytes ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = bytes
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("signTransaction error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun signTransaction1559(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val nonce: String = call.argument("nonce") ?: ""
+        val maxPriorityFeePerGas: String = call.argument("maxPriorityFeePerGas") ?: ""
+        val maxFeePerGas: String = call.argument("maxFeePerGas") ?: ""
+        val gasLimit: String = call.argument("gasLimit") ?: ""
+        val to: String = call.argument("to") ?: error("missing recipient")
+        val value: String = call.argument("value") ?: "0"
+        val data: String = call.argument("data") ?: ""
+        val chainId: Int = call.argument("chainId") ?: 0
+        val rawTransaction = RawTransaction.createTransaction(
+            chainId.toLong(),
+            BigInteger(nonce),
+            BigInteger(gasLimit),
+            to,
+            BigInteger(value),
+            data,
+            BigInteger(maxPriorityFeePerGas),
+            BigInteger(maxFeePerGas),
         )
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)

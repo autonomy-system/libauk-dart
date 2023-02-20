@@ -101,6 +101,31 @@ class WalletStorage {
     return res["data"];
   }
 
+  Future<Uint8List> ethSignTransaction1559({
+    required int nonce,
+    required BigInt gasLimit,
+    required BigInt maxPriorityFeePerGas,
+    required BigInt maxFeePerGas,
+    required String to,
+    required BigInt value,
+    required String data,
+    required int chainId,
+  }) async {
+    Map res = await _channel.invokeMethod('ethSignTransaction1559', {
+      "uuid": uuid,
+      "nonce": nonce.toString(),
+      "gasLimit": gasLimit.toString(),
+      "maxPriorityFeePerGas": maxPriorityFeePerGas.toString(),
+      "maxFeePerGas": maxFeePerGas.toString(),
+      "to": to,
+      "value": value.toString(),
+      "data": data,
+      "chainId": chainId
+    });
+
+    return res["data"];
+  }
+
   Future<String> encryptFile({
     required String inputPath,
     required String outputPath,
