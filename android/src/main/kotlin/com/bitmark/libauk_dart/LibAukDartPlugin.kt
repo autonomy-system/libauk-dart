@@ -61,14 +61,26 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "getETHAddress" -> {
                 getETHAddress(call, result)
             }
+            "getETHAddressWithIndex" -> {
+                getETHAddressWithIndex(call, result)
+            }
             "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
+            }
+            "ethSignPersonalMessageWithIndex" -> {
+                signPersonalMessageWithIndex(call, result)
             }
             "ethSignMessage" -> {
                 signMessage(call, result)
             }
+            "ethSignMessageWithIndex" -> {
+                signMessageWithIndex(call, result)
+            }
             "ethSignTransaction" -> {
                 signTransaction(call, result)
+            }
+            "ethSignTransactionWithIndex" -> {
+                signTransactionWithIndex(call, result)
             }
             "ethSignTransaction1559" -> {
                 signTransaction1559(call, result)
@@ -85,11 +97,20 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "getTezosPublicKey" -> {
                 getTezosPublicKey(call, result)
             }
+            "getTezosPublicKeyWithIndex" -> {
+                getTezosPublicKeyWithIndex(call, result)
+            }
             "tezosSignMessage" -> {
                 tezosSignMessage(call, result)
             }
+            "tezosSignMessageWithIndex" -> {
+                tezosSignMessageWithIndex(call, result)
+            }
             "tezosSignTransaction" -> {
                 tezosSignTransaction(call, result)
+            }
+            "tezosSignTransactionWithIndex" -> {
+                tezosSignTransactionWithIndex(call, result)
             }
             "removeKeys" -> {
                 removeKeys(call, result)
@@ -241,6 +262,23 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
+    private fun getETHAddressWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val index: Int = call.argument("index")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .getETHAddressWithIndex(index)
+            .subscribe({ address ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = address
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("getETHAddress error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
     private fun signMessage(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
@@ -258,11 +296,47 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
+    private fun signMessageWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val message: ByteArray = call.argument("message") ?: error("missing message")
+        val index: Int = call.argument("index")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .ethSignMessageWithIndex(message, true, index)
+            .subscribe({ sigData ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = "0x" + sigData.r.toHex() + sigData.s.toHex() + sigData.v.toHex()
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("signPersonalMessage error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
     private fun signPersonalMessage(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .ethSignMessage(message.ethPersonalMessage(), false)
+            .subscribe({ sigData ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = "0x" + sigData.r.toHex() + sigData.s.toHex() + sigData.v.toHex()
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("signPersonalMessage error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun signPersonalMessageWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val message: ByteArray = call.argument("message") ?: error("missing message")
+        val index: Int = call.argument("index")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .ethSignMessageWithIndex(message.ethPersonalMessage(), false, index)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -330,6 +404,39 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .ethSignTransaction(rawTransaction, chainId.toLong())
+            .subscribe({ bytes ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = bytes
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("signTransaction error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun signTransactionWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val nonce: String = call.argument("nonce") ?: ""
+        val gasPrice: String = call.argument("gasPrice") ?: ""
+        val gasLimit: String = call.argument("gasLimit") ?: ""
+        val to: String = call.argument("to") ?: error("missing recipient")
+        val value: String = call.argument("value") ?: "0"
+        val data: String = call.argument("data") ?: ""
+        val chainId: Int = call.argument("chainId") ?: 0
+        val index: Int = call.argument("index")
+        val rawTransaction = RawTransaction.createTransaction(
+            BigInteger(nonce),
+            BigInteger(gasPrice),
+            BigInteger(gasLimit),
+            to,
+            BigInteger(value),
+            data
+        )
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .ethSignTransactionWithIndex(rawTransaction, chainId.toLong(), index)
             .subscribe({ bytes ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -410,6 +517,24 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
+    private fun getTezosPublicKeyWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val index: Int = call.argument("index")
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .getTezosPublicKeyWithIndex(index)
+            .subscribe({ publicKey ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = publicKey
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicWords error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
     private fun tezosSignMessage(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
@@ -428,12 +553,50 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
+    private fun tezosSignMessageWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val message: ByteArray = call.argument("message") ?: error("missing message")
+        val index: Int = call.argument("index")
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .tezosSignMessageWithIndex(message, index)
+            .subscribe({ data ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = data
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicWords error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
     private fun tezosSignTransaction(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val forgedHex: String = call.argument("forgedHex") ?: error("missing message")
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .tezosTransaction(forgedHex)
+            .subscribe({ data ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = data
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicWords error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun tezosSignTransactionWithIndex(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        val forgedHex: String = call.argument("forgedHex") ?: error("missing message")
+        val index: Int = call.argument("index")
+
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .tezosTransactionWithIndex(forgedHex, index)
             .subscribe({ data ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
