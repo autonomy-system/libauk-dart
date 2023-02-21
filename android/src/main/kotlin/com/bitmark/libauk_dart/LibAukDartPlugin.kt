@@ -267,7 +267,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
 
     private fun getETHAddressWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .getETHAddressWithIndex(index)
             .subscribe({ address ->
@@ -302,7 +302,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun signMessageWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .ethSignMessageWithIndex(message, true, index)
             .subscribe({ sigData ->
@@ -337,7 +337,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun signPersonalMessageWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .ethSignMessageWithIndex(message.ethPersonalMessage(), false, index)
             .subscribe({ sigData ->
@@ -429,7 +429,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val value: String = call.argument("value") ?: "0"
         val data: String = call.argument("data") ?: ""
         val chainId: Int = call.argument("chainId") ?: 0
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
             chainId.toLong(),
             BigInteger(nonce),
@@ -464,7 +464,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val value: String = call.argument("value") ?: "0"
         val data: String = call.argument("data") ?: ""
         val chainId: Int = call.argument("chainId") ?: 0
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
             BigInteger(nonce),
             BigInteger(gasPrice),
@@ -558,7 +558,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
 
     private fun getTezosPublicKeyWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .getTezosPublicKeyWithIndex(index)
@@ -595,7 +595,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun tezosSignMessageWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .tezosSignMessageWithIndex(message, index)
@@ -632,7 +632,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun tezosSignTransactionWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val forgedHex: String = call.argument("forgedHex") ?: error("missing message")
-        val index: Int = call.argument("index")
+        val index: Int = call.argument("index") ?: 0
 
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .tezosTransactionWithIndex(forgedHex, index)
