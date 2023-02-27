@@ -312,7 +312,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("signPersonalMessage error", it.message, it)
+                result.error("signMessage error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -450,7 +450,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("signTransaction error", it.message, it)
+                result.error("signTransaction1559 error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -551,7 +551,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
+                result.error("getTezosPublicKey error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -569,7 +569,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
+                result.error("getTezosPublicKey error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -587,7 +587,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
+                result.error("tezosSignMessage error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -606,7 +606,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
+                result.error("tezosSignMessage error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -624,7 +624,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
+                result.error("tezosSignTransaction error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -643,7 +643,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("exportMnemonicWords error", it.message, it)
+                result.error("tezosSignTransaction error", it.message, it)
             })
             .let { disposables.add(it) }
     }
