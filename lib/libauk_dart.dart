@@ -156,11 +156,13 @@ class WalletStorage {
   Future<String> decryptFile({
     required String inputPath,
     required String outputPath,
+    bool usingLegacy = false,
   }) async {
     Map res = await _channel.invokeMethod('decryptFile', {
       "uuid": uuid,
       "inputPath": inputPath,
       "outputPath": outputPath,
+      "usingLegacy": usingLegacy,
     });
     return res["data"];
   }

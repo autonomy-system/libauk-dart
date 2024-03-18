@@ -510,8 +510,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val inputPath: String = call.argument("inputPath") ?: ""
         val outputPath: String = call.argument("outputPath") ?: ""
+        val usingLegacy: Boolean = call.argument("usingLegacy") ?: false
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .decryptFile(File(inputPath), File(outputPath))
+            .decryptFile(File(inputPath), File(outputPath), usingLegacy)
             .subscribeOn(Schedulers.computation())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
