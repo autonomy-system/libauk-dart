@@ -3,8 +3,21 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class LibAukDart {
+  static const MethodChannel _channel = const MethodChannel('libauk_dart');
+
   static WalletStorage getWallet(String uuid) {
     return WalletStorage(uuid);
+  }
+
+  static Future<bool> toggleBiometric({required bool isEnable}) async {
+    final res =
+        await _channel.invokeMethod('toggleBiometric', {"isEnable": isEnable});
+    return res["data"];
+  }
+
+  static Future<bool> isBiometricEnabled() async {
+    final res = await _channel.invokeMethod('isBiometricEnabled');
+    return res["data"];
   }
 }
 
@@ -199,9 +212,5 @@ class WalletStorage {
 
   Future<void> removeKeys() async {
     await _channel.invokeMethod('removeKeys', {"uuid": uuid});
-  }
-
-  Future<void> enableBiometrics({required bool isEnable}) async {
-    await _channel.invokeMethod('enableBiometrics', {"isEnable": isEnable});
   }
 }
