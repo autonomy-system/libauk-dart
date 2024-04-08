@@ -65,28 +65,28 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 getETHAddressWithIndex(call, result)
             }
             "ethSignPersonalMessage" -> {
-                signPersonalMessage(call, result)
+                ethSignPersonalMessage(call, result)
             }
             "ethSignPersonalMessageWithIndex" -> {
-                signPersonalMessageWithIndex(call, result)
+                ethSignPersonalMessageWithIndex(call, result)
             }
             "ethSignMessage" -> {
-                signMessage(call, result)
+                ethSignMessage(call, result)
             }
             "ethSignMessageWithIndex" -> {
-                signMessageWithIndex(call, result)
+                ethSignMessageWithIndex(call, result)
             }
             "ethSignTransaction" -> {
-                signTransaction(call, result)
+                ethSignTransaction(call, result)
             }
             "ethSignTransactionWithIndex" -> {
-                signTransactionWithIndex(call, result)
+                ethSignTransactionWithIndex(call, result)
             }
             "ethSignTransaction1559" -> {
-                signTransaction1559(call, result)
+                ethSignTransaction1559(call, result)
             }
             "ethSignTransaction1559WithIndex" -> {
-                signTransaction1559WithIndex(call, result)
+                ethSignTransaction1559WithIndex(call, result)
             }
             "encryptFile" -> {
                 encryptFile(call, result)
@@ -282,7 +282,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signMessage(call: MethodCall, result: Result) {
+    private fun ethSignMessage(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
@@ -299,7 +299,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signMessageWithIndex(call: MethodCall, result: Result) {
+    private fun ethSignMessageWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         val index: Int = call.argument("index") ?: 0
@@ -317,7 +317,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signPersonalMessage(call: MethodCall, result: Result) {
+    private fun ethSignPersonalMessage(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
@@ -334,7 +334,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signPersonalMessageWithIndex(call: MethodCall, result: Result) {
+    private fun ethSignPersonalMessageWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         val index: Int = call.argument("index") ?: 0
@@ -352,7 +352,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signTransaction(call: MethodCall, result: Result) {
+    private fun ethSignTransaction(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val nonce: String = call.argument("nonce") ?: ""
         val gasPrice: String = call.argument("gasPrice") ?: ""
@@ -384,7 +384,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signTransaction1559(call: MethodCall, result: Result) {
+    private fun ethSignTransaction1559(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val nonce: String = call.argument("nonce") ?: ""
         val maxPriorityFeePerGas: String = call.argument("maxPriorityFeePerGas") ?: ""
@@ -419,7 +419,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signTransaction1559WithIndex(call: MethodCall, result: Result) {
+    private fun ethSignTransaction1559WithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val nonce: String = call.argument("nonce") ?: ""
         val maxPriorityFeePerGas: String = call.argument("maxPriorityFeePerGas") ?: ""
@@ -455,7 +455,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun signTransactionWithIndex(call: MethodCall, result: Result) {
+    private fun ethSignTransactionWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val nonce: String = call.argument("nonce") ?: ""
         val gasPrice: String = call.argument("gasPrice") ?: ""
