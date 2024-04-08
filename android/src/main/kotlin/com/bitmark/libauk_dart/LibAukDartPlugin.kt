@@ -100,6 +100,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "getTezosPublicKey" -> {
                 getTezosPublicKey(call, result)
             }
+            "getEthPublicKey" -> {
+                getEthPublicKey(call, result)
+            }
             "getTezosPublicKeyWithIndex" -> {
                 getTezosPublicKeyWithIndex(call, result)
             }
@@ -545,6 +548,22 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
             .getTezosPublicKey()
+            .subscribe({ publicKey ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = publicKey
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("getTezosPublicKey error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun getEthPublicKey(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .getEthPublicKey()
             .subscribe({ publicKey ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
