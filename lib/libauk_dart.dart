@@ -36,6 +36,12 @@ class WalletStorage {
     return res["data"];
   }
 
+  Future<String> calculateFirstEthAddress(String words, String? passphrase) async {
+    Map res = await _channel.invokeMethod('calculateFirstEthAddress', {"words": words, "passphrase": passphrase ?? ""});
+
+    return res["data"];
+  }
+
   Future<String> getName() async {
     Map res = await _channel.invokeMethod('getName', {"uuid": uuid});
 
@@ -166,6 +172,13 @@ class WalletStorage {
       "outputPath": outputPath,
       "usingLegacy": usingLegacy,
     });
+    return res["data"];
+  }
+
+  Future<String> exportMnemonicPassphrase() async {
+    Map res =
+        await _channel.invokeMethod('exportMnemonicPassphrase', {"uuid": uuid});
+
     return res["data"];
   }
 
