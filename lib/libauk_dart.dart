@@ -66,8 +66,15 @@ class WalletStorage {
   }
 
   Future<String> getETHAddress({int index = 0}) async {
-    Map res = await _channel.invokeMethod(
-            'getETHAddressWithIndex', {"uuid": uuid, "index": index});
+
+    Map res = index == 0
+        ? await _channel.invokeMethod('getETHAddress', {
+            "uuid": uuid,
+          })
+        : await _channel.invokeMethod('getETHAddressWithIndex', {
+            "uuid": uuid,
+            "index": index,
+          });
 
     return res["data"];
   }
