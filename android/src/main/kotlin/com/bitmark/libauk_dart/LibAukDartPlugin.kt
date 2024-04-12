@@ -43,8 +43,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "importKey" -> {
                 importKey(call, result)
             }
-            "calculateEthFirstAddress" -> {
-                calculateEthFirstAddress(call, result)
+            "calculateFirstEthAddress" -> {
+                calculateFirstEthAddress(call, result)
             }
             "isWalletCreated" -> {
                 isWalletCreated(call, result)
@@ -174,10 +174,10 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun calculateEthFirstAddress(call: MethodCall, result: Result) {
+    private fun calculateFirstEthAddress(call: MethodCall, result: Result) {
         val words: String = call.argument("words") ?: ""
         val passphrase: String = call.argument("passphrase") ?: ""
-        LibAuk.getInstance().calculateEthFirstAddress(words, passphrase)
+        LibAuk.getInstance().calculateFirstEthAddress(words, passphrase)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -185,7 +185,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("calculateEthFirstAddress error", it.message, it)
+                result.error("calculateFirstEthAddress error", it.message, it)
             })
             .let { disposables.add(it) }
     }

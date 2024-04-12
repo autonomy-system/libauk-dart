@@ -2,15 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+
+const MethodChannel _channel = const MethodChannel('libauk_dart');
+
 class LibAukDart {
   static WalletStorage getWallet(String uuid) {
     return WalletStorage(uuid);
   }
+  static Future<String> calculateFirstEthAddress(String words, String? passphrase) async {
+    Map res = await _channel.invokeMethod('calculateFirstEthAddress', {"words": words, "passphrase": passphrase ?? ""});
+    return res["data"];
+  }
 }
 
 class WalletStorage {
-  static const MethodChannel _channel = const MethodChannel('libauk_dart');
-
   final String uuid;
 
   WalletStorage(this.uuid);
@@ -32,12 +37,6 @@ class WalletStorage {
 
   Future<bool> isWalletCreated() async {
     Map res = await _channel.invokeMethod('isWalletCreated', {"uuid": uuid});
-
-    return res["data"];
-  }
-
-  Future<String> calculateFirstEthAddress(String words, String? passphrase) async {
-    Map res = await _channel.invokeMethod('calculateFirstEthAddress', {"words": words, "passphrase": passphrase ?? ""});
 
     return res["data"];
   }
