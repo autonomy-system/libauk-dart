@@ -1,8 +1,10 @@
 package com.bitmark.libauk_dart
 
 import android.content.Context
-import androidx.annotation.NonNull
 import com.bitmark.libauk.LibAuk
+import com.bitmark.libauk.model.Seed
+import com.bitmark.libauk.util.fromJson
+import com.bitmark.libauk.util.newGsonInstance
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -10,6 +12,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.annotations.NonNull
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import org.web3j.crypto.RawTransaction
@@ -48,9 +51,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }
             "getName" -> {
                 getName(call, result)
-            }
-            "updateName" -> {
-                updateName(call, result)
             }
             "getAccountDID" -> {
                 getAccountDID(call, result)
@@ -97,9 +97,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
-            "getTezosPublicKey" -> {
-                getTezosPublicKey(call, result)
-            }
             "getTezosPublicKeyWithIndex" -> {
                 getTezosPublicKeyWithIndex(call, result)
             }
@@ -118,6 +115,12 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "removeKeys" -> {
                 removeKeys(call, result)
             }
+            "toggleBiometric" -> {
+                toggleBiometric(call, result)
+            }
+            "isBiometricEnabled" -> {
+                isBiometricEnabled(call, result)
+            }
             else -> {
                 result.notImplemented()
             }
@@ -132,8 +135,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun createKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
+        val isPrivate = true
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .createKey(name)
+            .createKey(name, isPrivate)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -152,8 +156,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val words: String = call.argument("words") ?: ""
         val dateInMili: Long? = call.argument("date")
         val date: Date = dateInMili?.let { Date(it) } ?: Date()
+        val isPrivate = true
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .importKey(words.split(" "), name, date)
+            .importKey(words.split(" "), name, date, isPrivate)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -198,23 +203,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun updateName(call: MethodCall, result: Result) {
-        val id: String? = call.argument("uuid")
-        val name: String = call.argument("name") ?: ""
-        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .updateName(name)
-            .subscribe({
-                val rev: HashMap<String, Any> = HashMap()
-                rev["error"] = 0
-                rev["msg"] = "updateName success"
-                result.success(rev)
-            }, {
-                it.printStackTrace()
-                result.error("updateName error", it.message, it)
-            })
-            .let { disposables.add(it) }
-    }
-
     private fun getAccountDID(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
 
@@ -227,7 +215,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("updateName error", it.message, it)
+                result.error("getAccountDID error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -244,7 +232,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("updateName error", it.message, it)
+                result.error("getAccountDIDSignature error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -541,22 +529,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun getTezosPublicKey(call: MethodCall, result: Result) {
-        val id: String? = call.argument("uuid")
-        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .getTezosPublicKey()
-            .subscribe({ publicKey ->
-                val rev: HashMap<String, Any> = HashMap()
-                rev["error"] = 0
-                rev["data"] = publicKey
-                result.success(rev)
-            }, {
-                it.printStackTrace()
-                result.error("getTezosPublicKey error", it.message, it)
-            })
-            .let { disposables.add(it) }
-    }
-
     private fun getTezosPublicKeyWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val index: Int = call.argument("index") ?: 0
@@ -570,7 +542,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("getTezosPublicKey error", it.message, it)
+                result.error("getTezosPublicKeyWithIndex error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -663,6 +635,41 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.error("removeKeys error", it.message, it)
             })
             .let { disposables.add(it) }
+    }
+
+    private  fun migrateAllSeed(directoryPath: String, isBiometricEnable: Boolean) {
+        val directory = File(directoryPath)
+
+        // check if the directory is exist
+        if (!directory.exists() || !directory.isDirectory) {
+            return
+        }
+
+        val items = ArrayList<File>()
+        val files = directory.listFiles()
+        if (files != null) {
+            for (file in files) {
+                val fileName = file.name
+                val storage = LibAuk.getInstance().getStorage(UUID.fromString(fileName), context)
+                val json = storage.readOnFilesDir("libauk_seed.dat", !isBiometricEnable)
+                val seed = newGsonInstance().fromJson<Seed>(String(json))
+                storage.writeOnFilesDir("libauk_seed.dat", newGsonInstance().toJson(seed).toByteArray(), isBiometricEnable)
+            }
+        }
+    }
+
+    private fun toggleBiometric(call: MethodCall, result: Result) {
+        val isEnabled: Boolean = call.argument("isEnabled") ?: false
+        setBiometric(isEnabled)
+        result.success(null)
+    }
+
+    private fun setBiometric(isEnabled: Boolean) {
+        // TODO: implement setBiometric
+    }
+
+    private fun isBiometricEnabled(call: MethodCall, result: Result) {
+        result.success(true)
     }
 }
 
