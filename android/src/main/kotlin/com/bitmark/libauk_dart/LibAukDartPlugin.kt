@@ -9,6 +9,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -177,7 +178,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun calculateFirstEthAddress(call: MethodCall, result: Result) {
         val words: String = call.argument("words") ?: ""
         val passphrase: String = call.argument("passphrase") ?: ""
-        LibAuk.getInstance().calculateFirstEthAddress(words, passphrase)
+        Single.just(LibAuk.getInstance().calculateFirstEthAddress(words, passphrase))
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
