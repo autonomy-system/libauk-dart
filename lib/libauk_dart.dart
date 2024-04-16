@@ -20,16 +20,16 @@ class WalletStorage {
 
   WalletStorage(this.uuid);
 
-  Future<void> createKey(String? password, String name) async {
+  Future<void> createKey(String? passphrase, String name) async {
     await _channel.invokeMethod(
-        'createKey', {"uuid": uuid, "password": password ?? "", "name": name});
+        'createKey', {"uuid": uuid, "passphrase": passphrase ?? "", "name": name});
   }
 
-  Future<void> importKey( String words, String? password, String name, int date) async {
+  Future<void> importKey( String words, String? passphrase, String name, int date) async {
     await _channel.invokeMethod('importKey', {
       "uuid": uuid,
       "words": words,
-      "password": password ?? "",
+      "passphrase": passphrase ?? "",
       "name": name,
       "date": date,
     });

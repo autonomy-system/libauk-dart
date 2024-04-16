@@ -138,9 +138,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun createKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
-        val password: String = call.argument("password") ?: ""
+        val passphrase: String = call.argument("passphrase") ?: ""
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .createKey(password, name)
+            .createKey(passphrase, name)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -157,11 +157,11 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
         val words: String = call.argument("words") ?: ""
-        val password: String = call.argument("password") ?: ""
+        val passphrase: String = call.argument("passphrase") ?: ""
         val dateInMili: Long? = call.argument("date")
         val date: Date = dateInMili?.let { Date(it) } ?: Date()
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .importKey(words.split(" "), password, name, date)
+            .importKey(words.split(" "), passphrase, name, date)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
