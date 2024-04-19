@@ -9,6 +9,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -42,6 +43,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }
             "importKey" -> {
                 importKey(call, result)
+            }
+            "calculateFirstEthAddress" -> {
+                calculateFirstEthAddress(call, result)
             }
             "isWalletCreated" -> {
                 isWalletCreated(call, result)
@@ -94,6 +98,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "decryptFile" -> {
                 decryptFile(call, result)
             }
+            "exportMnemonicPassphrase" -> {
+                exportMnemonicPassphrase(call, result)
+            }
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
@@ -132,8 +139,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private fun createKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
+        val passphrase: String = call.argument("passphrase") ?: ""
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .createKey(name)
+            .createKey(passphrase, name)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -150,10 +158,11 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
         val words: String = call.argument("words") ?: ""
+        val passphrase: String = call.argument("passphrase") ?: ""
         val dateInMili: Long? = call.argument("date")
         val date: Date = dateInMili?.let { Date(it) } ?: Date()
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .importKey(words.split(" "), name, date)
+            .importKey(words.split(" "), passphrase, name, date)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -162,6 +171,22 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }, {
                 it.printStackTrace()
                 result.error("importKey error", it.message, it)
+            })
+            .let { disposables.add(it) }
+    }
+
+    private fun calculateFirstEthAddress(call: MethodCall, result: Result) {
+        val words: String = call.argument("words") ?: ""
+        val passphrase: String = call.argument("passphrase") ?: ""
+        Single.just(LibAuk.getInstance().calculateFirstEthAddress(words, passphrase))
+            .subscribe({
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = it
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("calculateFirstEthAddress error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -523,6 +548,22 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }, { error ->
                 result.error("Decrypt file failed", error.message, error)
             }).let { disposables.add(it) }
+    }
+
+    private fun exportMnemonicPassphrase(call: MethodCall, result: Result) {
+        val id: String? = call.argument("uuid")
+        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
+            .exportMnemonicPassphrase()
+            .subscribe({ passphrase ->
+                val rev: HashMap<String, Any> = HashMap()
+                rev["error"] = 0
+                rev["data"] = passphrase
+                result.success(rev)
+            }, {
+                it.printStackTrace()
+                result.error("exportMnemonicPassphrase error", it.message, it)
+            })
+            .let { disposables.add(it) }
     }
 
     private fun exportMnemonicWords(call: MethodCall, result: Result) {
