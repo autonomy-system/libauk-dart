@@ -46,7 +46,7 @@ dependencies {
     // Rx2
     implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
     implementation "io.reactivex.rxjava2:rxandroid:2.1.1"
-    implementation('com.github.bitmark-inc:libauk-kotlin:83705a5c6f') {
+    implementation('com.github.bitmark-inc:libauk-kotlin:55411a3ae9') {
         exclude group: 'com.google.protobuf'
         exclude module: 'jetified-protobuf-java'
     }

@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.fragment.app.FragmentActivity
 import com.bitmark.libauk.LibAuk
 import com.bitmark.libauk.model.Seed
+import com.bitmark.libauk.storage.ETH_KEY_INFO_FILE_NAME
+import com.bitmark.libauk.util.BiometricUtil
 import com.bitmark.libauk.util.fromJson
 import com.bitmark.libauk.util.newGsonInstance
 
@@ -15,6 +17,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.annotations.NonNull
@@ -151,6 +154,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "isBiometricEnabled" -> {
                 isBiometricEnabled(call, result)
             }
+            "migrate" -> migrate(call, result)
             else -> {
                 result.notImplemented()
             }
@@ -161,6 +165,41 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         channel.setMethodCallHandler(null)
         disposables.dispose()
     }
+
+    private fun readAllKeyStoreFiles(nameFilterFunction: (String) -> Boolean): Single<Map<String, ByteArray>> {
+        return Single.fromCallable {
+            val files = context.filesDir.listFiles { _, name -> nameFilterFunction(name) }
+            val map = mutableMapOf<String, ByteArray>()
+            files?.forEach { file ->
+                val name = file.name.substringAfter("-")
+                val data = file.readBytes()
+                map[name] = data
+            }
+            map
+        }
+    }
+
+    fun migrate(){
+        migrateV1()
+    }
+
+    private fun migrateV1(){
+        readAllKeyStoreFiles {
+            it.contains("ETH_KEY_INFO_FILE_NAME")
+        }.map { filesMap ->
+            filesMap.forEach { (name, data) ->
+                val uuid = name.substringBefore("-")
+                val storage = LibAuk.getInstance().getStorage(UUID.fromString(uuid), context)
+                storage.exportSeed(withAuthentication = false).map { seed ->
+                    val seedPublicData = storage.generateSeedPublicData(seed)
+                    storage.writeOnFilesDir("libauk_seed_public_data.dat", newGsonInstance().toJson(seedPublicData).toByteArray(), false)
+                }
+                storage.removeKeys()
+            }
+        }
+    }
+
+
 
     private fun createKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
@@ -725,13 +764,40 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun toggleBiometric(call: MethodCall, result: Result) {
         val isEnabled: Boolean = call.argument("isEnable") ?: false
-        setBiometric(isEnabled)
-        result.success(
-            mapOf(
-                "error" to 0,
-                "data" to true
+        if (isEnabled == false) {
+            val didAuthen = BiometricUtil.withAuthenticate<Boolean>(context as FragmentActivity, onAuthenticationSucceeded = {
+                setBiometric(isEnabled)
+                true
+            }, onAuthenticationFailed = {
+                false
+            }, onAuthenticationError = {_, _ ->
+                    false
+            }).subscribe( {didAuthen ->
+            if (didAuthen) {
+                result.success(
+                    mapOf(
+                        "error" to 0,
+                        "data" to true
+                    )
+                )
+            }
+            else {
+                result.success(
+                    mapOf(
+                        "error" to 0,
+                        "data" to false
+                    )
+                )
+            }}).let { disposables.add(it) }
+        } else {
+            setBiometric(isEnabled)
+            result.success(
+                mapOf(
+                    "error" to 0,
+                    "data" to true
+                )
             )
-        )
+        }
     }
 
     private fun setBiometric(isEnabled: Boolean) {
@@ -748,6 +814,65 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 "data" to isEnabled
             )
         )
+    }
+
+    private fun migrate(call: MethodCall, result: Result) {
+        this.migrate(context).map {
+            result.success(
+                mapOf(
+                    "error" to 0,
+                    "data" to true
+                )
+        ) }.subscribe().let { disposables.add(it) }
+
+    }
+    private fun migrate(context: Context): Single<Unit> {
+        return migrateV1(context)
+    }
+
+    private fun readAllKeyStoreFiles(
+        nameFilterFunction: (String) -> Boolean,
+        context: Context
+    ): Single<Map<String, ByteArray>> {
+        return Single.fromCallable {
+            val files = context.filesDir.listFiles { _, name -> nameFilterFunction(name) }
+            val map = mutableMapOf<String, ByteArray>()
+            files?.forEach { file ->
+                val data = file.readBytes()
+                map[file.name] = data
+            }
+            map
+        }
+    }
+
+    private fun getUUIDFromFileName(fileName: String): String {
+        val lastIndex = fileName.lastIndexOf("-")
+        return fileName.substring(0, lastIndex)
+    }
+
+    private fun migrateV1(context: Context): Single<Unit> {
+        return readAllKeyStoreFiles(
+            { name -> name.endsWith(ETH_KEY_INFO_FILE_NAME) },
+            context
+        ).map { filesMap ->
+            Observable.fromIterable(filesMap.toList())
+                .map { (name, data) ->
+                    val uuidString = getUUIDFromFileName(name)
+                    val uuid = UUID.fromString(uuidString)
+
+                    val storage = LibAuk.getInstance().getStorage(uuid, context)
+                    storage.exportSeed(withAuthentication = false).map { seed ->
+                        val seedPublicData = storage.generateSeedPublicData(seed)
+                        storage.writeOnFilesDir(
+                            "libauk_seed_public_data.dat",
+                            newGsonInstance().toJson(seedPublicData).toByteArray(),
+                            false
+                        )
+                        storage.removeKey(ETH_KEY_INFO_FILE_NAME)
+                    }
+                }
+                .toList()
+        }
     }
 }
 

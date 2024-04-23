@@ -8,8 +8,11 @@ class LibAukDart {
   static WalletStorage getWallet(String uuid) {
     return WalletStorage(uuid);
   }
-  static Future<String> calculateFirstEthAddress(String words, String? passphrase) async {
-    Map res = await _channel.invokeMethod('calculateFirstEthAddress', {"words": words, "passphrase": passphrase ?? ""});
+
+  static Future<String> calculateFirstEthAddress(
+      String words, String? passphrase) async {
+    Map res = await _channel.invokeMethod('calculateFirstEthAddress',
+        {"words": words, "passphrase": passphrase ?? ""});
     return res["data"];
   }
 
@@ -23,6 +26,10 @@ class LibAukDart {
     final res = await _channel.invokeMethod('isBiometricEnabled');
     return res["data"];
   }
+
+  static Future<void> migrate() async {
+    await _channel.invokeMethod('migrate');
+  }
 }
 
 class WalletStorage {
@@ -33,11 +40,12 @@ class WalletStorage {
   WalletStorage(this.uuid);
 
   Future<void> createKey(String? passphrase, String name) async {
-    await _channel.invokeMethod(
-        'createKey', {"uuid": uuid, "passphrase": passphrase ?? "", "name": name});
+    await _channel.invokeMethod('createKey',
+        {"uuid": uuid, "passphrase": passphrase ?? "", "name": name});
   }
 
-  Future<void> importKey( String words, String? passphrase, String name, int date) async {
+  Future<void> importKey(
+      String words, String? passphrase, String name, int date) async {
     await _channel.invokeMethod('importKey', {
       "uuid": uuid,
       "words": words,
@@ -78,23 +86,24 @@ class WalletStorage {
 
   Future<String> getETHAddress({int index = 0}) async {
     Map res = await _channel.invokeMethod('getETHAddressWithIndex', {
-            "uuid": uuid,
-            "index": index,
-          });
+      "uuid": uuid,
+      "index": index,
+    });
 
     return res["data"];
   }
 
-  Future<String> ethSignPersonalMessage(Uint8List bytes, {int index = 0}) async {
+  Future<String> ethSignPersonalMessage(Uint8List bytes,
+      {int index = 0}) async {
     Map res = await _channel.invokeMethod('ethSignPersonalMessageWithIndex',
-            {"uuid": uuid, "message": bytes, "index": index});
+        {"uuid": uuid, "message": bytes, "index": index});
 
     return res["data"];
   }
 
   Future<String> ethSignMessage(Uint8List bytes, {int index = 0}) async {
     Map res = await _channel.invokeMethod('ethSignMessageWithIndex',
-            {"uuid": uuid, "message": bytes, "index": index});
+        {"uuid": uuid, "message": bytes, "index": index});
 
     return res["data"];
   }
