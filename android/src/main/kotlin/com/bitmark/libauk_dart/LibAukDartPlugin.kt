@@ -1,12 +1,16 @@
 package com.bitmark.libauk_dart
 
+import android.app.Activity
 import android.content.Context
+import androidx.fragment.app.FragmentActivity
 import com.bitmark.libauk.LibAuk
 import com.bitmark.libauk.model.Seed
 import com.bitmark.libauk.util.fromJson
 import com.bitmark.libauk.util.newGsonInstance
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -22,7 +26,7 @@ import java.math.BigInteger
 import java.util.*
 
 /** LibaukDartPlugin */
-class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
+class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -30,12 +34,31 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private lateinit var disposables: CompositeDisposable
+    private lateinit var activity: Activity
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        context = flutterPluginBinding.applicationContext
+//        context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "libauk_dart")
         channel.setMethodCallHandler(this)
         disposables = CompositeDisposable()
+    }
+
+    override fun onAttachedToActivity(activityPluginBinding: ActivityPluginBinding) {
+        activity = activityPluginBinding.activity
+        context = activityPluginBinding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        disposables.dispose()
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        context = binding.activity
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        disposables.dispose()
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -651,25 +674,39 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             for (file in files) {
                 val fileName = file.name
                 val storage = LibAuk.getInstance().getStorage(UUID.fromString(fileName), context)
-                val json = storage.readOnFilesDir("libauk_seed.dat", !isBiometricEnable)
-                val seed = newGsonInstance().fromJson<Seed>(String(json))
-                storage.writeOnFilesDir("libauk_seed.dat", newGsonInstance().toJson(seed).toByteArray(), isBiometricEnable)
+                storage.readOnFilesDir("libauk_seed.dat").map { json ->
+                    val seed = newGsonInstance().fromJson<Seed>(String(json))
+                    storage.writeOnFilesDir("libauk_seed.dat", newGsonInstance().toJson(seed).toByteArray(), isBiometricEnable)
+                }
             }
         }
     }
 
     private fun toggleBiometric(call: MethodCall, result: Result) {
-        val isEnabled: Boolean = call.argument("isEnabled") ?: false
+        val isEnabled: Boolean = call.argument("isEnable") ?: false
         setBiometric(isEnabled)
-        result.success(null)
+        result.success(
+            mapOf(
+                "error" to 0,
+                "data" to true
+            )
+        )
     }
 
     private fun setBiometric(isEnabled: Boolean) {
-        // TODO: implement setBiometric
+        val sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putBoolean("flutter.device_passcode", isEnabled).apply()
     }
 
     private fun isBiometricEnabled(call: MethodCall, result: Result) {
-        result.success(true)
+        val sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val isEnabled = sharedPreferences.getBoolean("flutter.device_passcode", false)
+        result.success(
+            mapOf(
+                "error" to 0,
+                "data" to isEnabled
+            )
+        )
     }
 }
 
