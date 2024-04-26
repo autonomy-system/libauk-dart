@@ -41,7 +41,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var activity: Activity
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-//        context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "libauk_dart")
         channel.setMethodCallHandler(this)
         disposables = CompositeDisposable()
