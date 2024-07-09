@@ -178,28 +178,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
 
-    fun migrate(){
-        migrateV1()
-    }
-
-    private fun migrateV1(){
-        readAllKeyStoreFiles {
-            it.contains("ETH_KEY_INFO_FILE_NAME")
-        }.map { filesMap ->
-            filesMap.forEach { (name, data) ->
-                val uuid = name.substringBefore("-")
-                val storage = LibAuk.getInstance().getStorage(UUID.fromString(uuid), context)
-                storage.exportSeed(withAuthentication = false).map { seed ->
-                    val seedPublicData = storage.generateSeedPublicData(seed)
-                    storage.writeOnFilesDir("libauk_seed_public_data.dat", newGsonInstance().toJson(seedPublicData).toByteArray(), false)
-                }
-                storage.removeKeys()
-            }
-        }
-    }
-
-
-
     private fun createKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
@@ -737,28 +715,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.error("removeKeys error", it.message, it)
             })
             .let { disposables.add(it) }
-    }
-
-    private  fun migrateAllSeed(directoryPath: String, isBiometricEnable: Boolean) {
-        val directory = File(directoryPath)
-
-        // check if the directory is exist
-        if (!directory.exists() || !directory.isDirectory) {
-            return
-        }
-
-        val items = ArrayList<File>()
-        val files = directory.listFiles()
-        if (files != null) {
-            for (file in files) {
-                val fileName = file.name
-                val storage = LibAuk.getInstance().getStorage(UUID.fromString(fileName), context)
-                storage.readOnFilesDir("libauk_seed.dat").map { json ->
-                    val seed = newGsonInstance().fromJson<Seed>(String(json))
-                    storage.writeOnFilesDir("libauk_seed.dat", newGsonInstance().toJson(seed).toByteArray(), isBiometricEnable)
-                }
-            }
-        }
     }
 
     private fun toggleBiometric(call: MethodCall, result: Result) {
