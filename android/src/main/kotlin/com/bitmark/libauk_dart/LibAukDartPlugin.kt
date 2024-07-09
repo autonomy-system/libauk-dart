@@ -2,6 +2,7 @@ package com.bitmark.libauk_dart
 
 import android.app.Activity
 import android.content.Context
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import com.bitmark.libauk.LibAuk
 import com.bitmark.libauk.model.Seed
@@ -17,6 +18,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -772,14 +774,29 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun migrate(call: MethodCall, result: Result) {
-        this.migrate(context).map {
-            result.success(
-                mapOf(
-                    "error" to 0,
-                    "data" to true
+        this.migrate(context)
+            .doOnSubscribe {
+                // Log the start of migration
+                Log.d("Migration", "Starting migration process.")
+            }
+            .doOnComplete {
+                // On successful completion
+                result.success(
+                    mapOf(
+                        "error" to 0,
+                        "data" to true
+                    )
                 )
-        ) }.subscribe().let { disposables.add(it) }
-
+                // Log successful completion
+                Log.d("Migration", "Migration process completed successfully.")
+            }
+            .doOnError { error ->
+                // Log any errors encountered
+                Log.e("Migration", "Migration process failed with error: ${error.message}", error)
+                result.error("MigrationError", "Migration process failed", error)
+            }
+            .subscribe()
+            .let { disposables.add(it) }
     }
     private fun migrate(context: Context): Completable {
         return migrateV1(context)
