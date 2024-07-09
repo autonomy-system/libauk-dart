@@ -781,7 +781,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         ) }.subscribe().let { disposables.add(it) }
 
     }
-    private fun migrate(context: Context): Single<Unit> {
+    private fun migrate(context: Context): Completable {
         return migrateV1(context)
     }
 
@@ -805,7 +805,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         return fileName.substring(0, lastIndex)
     }
 
-    private fun migrateV1(context: Context): Single<Unit> {
+    private fun migrateV1(context: Context): Completable {
         return readAllKeyStoreFiles(
             { name -> name.endsWith(ETH_KEY_INFO_FILE_NAME) },  // Filter files ending with ETH_KEY_INFO_FILE_NAME
             context
