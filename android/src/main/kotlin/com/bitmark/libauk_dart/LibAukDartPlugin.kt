@@ -807,26 +807,38 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun migrateV1(context: Context): Single<Unit> {
         return readAllKeyStoreFiles(
-            { name -> name.endsWith(ETH_KEY_INFO_FILE_NAME) },
+            { name -> name.endsWith(ETH_KEY_INFO_FILE_NAME) },  // Filter files ending with ETH_KEY_INFO_FILE_NAME
             context
-        ).map { filesMap ->
+        ).flatMapCompletable { filesMap ->
+            // Convert map to a sequence of (name, data) pairs
             Observable.fromIterable(filesMap.toList())
-                .map { (name, data) ->
-                    val uuidString = getUUIDFromFileName(name)
-                    val uuid = UUID.fromString(uuidString)
+                .flatMapCompletable { (name, data) ->
+                    try {
+                        // Extract UUID from file name
+                        val uuidString = getUUIDFromFileName(name)
+                        val uuid = UUID.fromString(uuidString)
+                        val storage = LibAuk.getInstance().getStorage(uuid, context)
 
-                    val storage = LibAuk.getInstance().getStorage(uuid, context)
-                    storage.exportSeed(withAuthentication = false).map { seed ->
-                        val seedPublicData = storage.generateSeedPublicData(seed)
-                        storage.writeOnFilesDir(
-                            "libauk_seed_public_data.dat",
-                            newGsonInstance().toJson(seedPublicData).toByteArray(),
-                            false
-                        )
-                        storage.removeKey(ETH_KEY_INFO_FILE_NAME)
+                        // Export seed without authentication and process it
+                        storage.exportSeed(withAuthentication = false).flatMapCompletable { seed ->
+                            // Generate public data from the seed
+                            val seedPublicData = storage.generateSeedPublicData(seed)
+
+                            // Write public data to files directory
+                            storage.writeOnFilesDir(
+                                "libauk_seed_public_data.dat",
+                                newGsonInstance().toJson(seedPublicData).toByteArray(),
+                                false
+                            )
+
+                            // Remove the key file
+                            storage.removeKey(ETH_KEY_INFO_FILE_NAME)
+                        }
+                    } catch (e: Exception) {
+                        // Handle exceptions gracefully
+                        Completable.error(e)
                     }
                 }
-                .toList()
         }
     }
 }
