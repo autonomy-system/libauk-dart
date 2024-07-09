@@ -35,6 +35,10 @@ android {
     defaultConfig {
         minSdkVersion 24
     }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
 }
 
 dependencies {
@@ -42,10 +46,11 @@ dependencies {
     // Rx2
     implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
     implementation "io.reactivex.rxjava2:rxandroid:2.1.1"
-    implementation('com.github.bitmark-inc:libauk-kotlin:0.6.3') {
+    implementation('com.github.bitmark-inc:libauk-kotlin:v0.6.4') {
         exclude group: 'com.google.protobuf'
         exclude module: 'jetified-protobuf-java'
     }
+    implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'org.web3j:core:4.8.7-android'
     implementation 'io.camlcase:kotlintezos:2.0.2'
 }

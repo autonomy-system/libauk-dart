@@ -1,16 +1,28 @@
 package com.bitmark.libauk_dart
 
+import android.app.Activity
 import android.content.Context
-import androidx.annotation.NonNull
+import android.util.Log
+import androidx.fragment.app.FragmentActivity
 import com.bitmark.libauk.LibAuk
+import com.bitmark.libauk.model.Seed
+import com.bitmark.libauk.storage.ETH_KEY_INFO_FILE_NAME
+import com.bitmark.libauk.util.BiometricUtil
+import com.bitmark.libauk.util.fromJson
+import com.bitmark.libauk.util.newGsonInstance
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.reactivex.Completable
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.annotations.NonNull
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import org.web3j.crypto.RawTransaction
@@ -20,7 +32,7 @@ import java.math.BigInteger
 import java.util.*
 
 /** LibaukDartPlugin */
-class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
+class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -28,12 +40,30 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private lateinit var disposables: CompositeDisposable
+    private lateinit var activity: Activity
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "libauk_dart")
         channel.setMethodCallHandler(this)
         disposables = CompositeDisposable()
+    }
+
+    override fun onAttachedToActivity(activityPluginBinding: ActivityPluginBinding) {
+        activity = activityPluginBinding.activity
+        context = activityPluginBinding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        disposables.dispose()
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        context = binding.activity
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        disposables.dispose()
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -52,9 +82,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             }
             "getName" -> {
                 getName(call, result)
-            }
-            "updateName" -> {
-                updateName(call, result)
             }
             "getAccountDID" -> {
                 getAccountDID(call, result)
@@ -104,9 +131,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
-            "getTezosPublicKey" -> {
-                getTezosPublicKey(call, result)
-            }
             "getTezosPublicKeyWithIndex" -> {
                 getTezosPublicKeyWithIndex(call, result)
             }
@@ -125,6 +149,13 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "removeKeys" -> {
                 removeKeys(call, result)
             }
+            "toggleBiometric" -> {
+                toggleBiometric(call, result)
+            }
+            "isBiometricEnabled" -> {
+                isBiometricEnabled(call, result)
+            }
+            "migrate" -> migrate(call, result)
             else -> {
                 result.notImplemented()
             }
@@ -136,12 +167,26 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         disposables.dispose()
     }
 
+    private fun readAllKeyStoreFiles(nameFilterFunction: (String) -> Boolean): Single<Map<String, ByteArray>> {
+        return Single.fromCallable {
+            val files = context.filesDir.listFiles { _, name -> nameFilterFunction(name) }
+            val map = mutableMapOf<String, ByteArray>()
+            files?.forEach { file ->
+                val name = file.name.substringAfter("-")
+                val data = file.readBytes()
+                map[name] = data
+            }
+            map
+        }
+    }
+
     private fun createKey(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val name: String = call.argument("name") ?: ""
         val passphrase: String = call.argument("passphrase") ?: ""
+        val isPrivate = true
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .createKey(passphrase, name)
+            .createKey(passphrase, name, isPrivate)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -161,8 +206,9 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val passphrase: String = call.argument("passphrase") ?: ""
         val dateInMili: Long? = call.argument("date")
         val date: Date = dateInMili?.let { Date(it) } ?: Date()
+        val isPrivate = true
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .importKey(words.split(" "), passphrase, name, date)
+            .importKey(words.split(" "), passphrase, name, date, isPrivate)
             .subscribe({
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -223,23 +269,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun updateName(call: MethodCall, result: Result) {
-        val id: String? = call.argument("uuid")
-        val name: String = call.argument("name") ?: ""
-        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .updateName(name)
-            .subscribe({
-                val rev: HashMap<String, Any> = HashMap()
-                rev["error"] = 0
-                rev["msg"] = "updateName success"
-                result.success(rev)
-            }, {
-                it.printStackTrace()
-                result.error("updateName error", it.message, it)
-            })
-            .let { disposables.add(it) }
-    }
-
     private fun getAccountDID(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
 
@@ -252,7 +281,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("updateName error", it.message, it)
+                result.error("getAccountDID error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -269,7 +298,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("updateName error", it.message, it)
+                result.error("getAccountDIDSignature error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -582,22 +611,6 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             .let { disposables.add(it) }
     }
 
-    private fun getTezosPublicKey(call: MethodCall, result: Result) {
-        val id: String? = call.argument("uuid")
-        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .getTezosPublicKey()
-            .subscribe({ publicKey ->
-                val rev: HashMap<String, Any> = HashMap()
-                rev["error"] = 0
-                rev["data"] = publicKey
-                result.success(rev)
-            }, {
-                it.printStackTrace()
-                result.error("getTezosPublicKey error", it.message, it)
-            })
-            .let { disposables.add(it) }
-    }
-
     private fun getTezosPublicKeyWithIndex(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
         val index: Int = call.argument("index") ?: 0
@@ -611,7 +624,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("getTezosPublicKey error", it.message, it)
+                result.error("getTezosPublicKeyWithIndex error", it.message, it)
             })
             .let { disposables.add(it) }
     }
@@ -704,6 +717,146 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
                 result.error("removeKeys error", it.message, it)
             })
             .let { disposables.add(it) }
+    }
+
+    private fun toggleBiometric(call: MethodCall, result: Result) {
+        val isEnabled: Boolean = call.argument("isEnable") ?: false
+        if (isEnabled == false) {
+            val didAuthen = BiometricUtil.withAuthenticate<Boolean>(context as FragmentActivity, onAuthenticationSucceeded = {
+                setBiometric(isEnabled)
+                true
+            }, onAuthenticationFailed = {
+                false
+            }, onAuthenticationError = {_, _ ->
+                    false
+            }).subscribe( {didAuthen ->
+            if (didAuthen) {
+                result.success(
+                    mapOf(
+                        "error" to 0,
+                        "data" to true
+                    )
+                )
+            }
+            else {
+                result.success(
+                    mapOf(
+                        "error" to 0,
+                        "data" to false
+                    )
+                )
+            }}).let { disposables.add(it) }
+        } else {
+            setBiometric(isEnabled)
+            result.success(
+                mapOf(
+                    "error" to 0,
+                    "data" to true
+                )
+            )
+        }
+    }
+
+    private fun setBiometric(isEnabled: Boolean) {
+        val sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putBoolean("flutter.device_passcode", isEnabled).apply()
+    }
+
+    private fun isBiometricEnabled(call: MethodCall, result: Result) {
+        val sharedPreferences = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val isEnabled = sharedPreferences.getBoolean("flutter.device_passcode", false)
+        result.success(
+            mapOf(
+                "error" to 0,
+                "data" to isEnabled
+            )
+        )
+    }
+
+    private fun migrate(call: MethodCall, result: Result) {
+        this.migrate(context)
+            .doOnSubscribe {
+                // Log the start of migration
+                Log.d("Migration", "Starting migration process.")
+            }
+            .doOnComplete {
+                // On successful completion
+                result.success(
+                    mapOf(
+                        "error" to 0,
+                        "data" to true
+                    )
+                )
+                // Log successful completion
+                Log.d("Migration", "Migration process completed successfully.")
+            }
+            .doOnError { error ->
+                // Log any errors encountered
+                Log.e("Migration", "Migration process failed with error: ${error.message}", error)
+                result.error("MigrationError", "Migration process failed", error)
+            }
+            .subscribe()
+            .let { disposables.add(it) }
+    }
+    private fun migrate(context: Context): Completable {
+        return migrateV1(context)
+    }
+
+    private fun readAllKeyStoreFiles(
+        nameFilterFunction: (String) -> Boolean,
+        context: Context
+    ): Single<Map<String, ByteArray>> {
+        return Single.fromCallable {
+            val files = context.filesDir.listFiles { _, name -> nameFilterFunction(name) }
+            val map = mutableMapOf<String, ByteArray>()
+            files?.forEach { file ->
+                val data = file.readBytes()
+                map[file.name] = data
+            }
+            map
+        }
+    }
+
+    private fun getUUIDFromFileName(fileName: String): String {
+        val lastIndex = fileName.lastIndexOf("-")
+        return fileName.substring(0, lastIndex)
+    }
+
+    private fun migrateV1(context: Context): Completable {
+        return readAllKeyStoreFiles(
+            { name -> name.endsWith(ETH_KEY_INFO_FILE_NAME) },  // Filter files ending with ETH_KEY_INFO_FILE_NAME
+            context
+        ).flatMapCompletable { filesMap ->
+            // Convert map to a sequence of (name, data) pairs
+            Observable.fromIterable(filesMap.toList())
+                .flatMapCompletable { (name, data) ->
+                    try {
+                        // Extract UUID from file name
+                        val uuidString = getUUIDFromFileName(name)
+                        val uuid = UUID.fromString(uuidString)
+                        val storage = LibAuk.getInstance().getStorage(uuid, context)
+
+                        // Export seed without authentication and process it
+                        storage.exportSeed(withAuthentication = false).flatMapCompletable { seed ->
+                            // Generate public data from the seed
+                            val seedPublicData = storage.generateSeedPublicData(seed)
+
+                            // Write public data to files directory
+                            storage.writeOnFilesDir(
+                                "libauk_seed_public_data.dat",
+                                newGsonInstance().toJson(seedPublicData).toByteArray(),
+                                false
+                            )
+
+                            // Remove the key file
+                            storage.removeKey(ETH_KEY_INFO_FILE_NAME)
+                        }
+                    } catch (e: Exception) {
+                        // Handle exceptions gracefully
+                        Completable.error(e)
+                    }
+                }
+        }
     }
 }
 
