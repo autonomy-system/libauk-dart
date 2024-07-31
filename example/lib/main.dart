@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libauk_dart/libauk_dart.dart';
 import 'package:uuid/uuid.dart';
@@ -32,8 +32,8 @@ class _MyAppState extends State<MyApp> {
       var uuid = Uuid().v4();
       print(uuid);
       var storage = LibAukDart.getWallet(uuid);
-      await storage.createKey("","Hello");
-      address = (await storage.getETHAddress());
+      await storage.createKey("", "Hello");
+      address = (await storage.getETHAddressWithIndex());
     } on PlatformException {
       address = 'Failed to get Address.';
     }

@@ -92,8 +92,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "getETHAddress" -> {
                 getETHAddress(call, result)
             }
-            "getETHAddressWithIndex" -> {
-                getETHAddressWithIndex(call, result)
+            "getETHAddressesWithIndexes" -> {
+                getETHAddressesWithIndexes(call, result)
             }
             "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
@@ -319,21 +319,32 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             .let { disposables.add(it) }
     }
 
-    private fun getETHAddressWithIndex(call: MethodCall, result: Result) {
+    private fun getETHAddressesWithIndexes(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
-        val index: Int = call.argument("index") ?: 0
-        LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .getETHAddressWithIndex(index)
-            .subscribe({ address ->
-                val rev: HashMap<String, Any> = HashMap()
-                rev["error"] = 0
-                rev["data"] = address
-                result.success(rev)
-            }, {
-                it.printStackTrace()
-                result.error("getETHAddress error", it.message, it)
-            })
-            .let { disposables.add(it) }
+        val indexes: List<Int> = call.argument("indexes") ?: emptyList()
+
+        if (id.isNullOrEmpty()) {
+            result.error("InvalidArgument", "UUID is required", null)
+            return
+        }
+
+        try {
+            val uuid = UUID.fromString(id)
+            LibAuk.getInstance().getStorage(uuid, context)
+                .getETHAddressWithIndexes(indexes)
+                .subscribe({ addresses ->
+                    val rev: HashMap<String, Any> = hashMapOf(
+                        "error" to 0,
+                        "data" to addresses
+                    )
+                    result.success(rev)
+                }, { error ->
+                    error.printStackTrace()
+                    result.error("getETHAddress error", error.message, error)
+                }).let { disposables.add(it) }
+        } catch (e: IllegalArgumentException) {
+            result.error("InvalidUUID", "UUID format is invalid", e)
+        }
     }
 
     private fun signMessage(call: MethodCall, result: Result) {

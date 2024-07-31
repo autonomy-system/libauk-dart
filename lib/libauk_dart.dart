@@ -84,13 +84,23 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<String> getETHAddress({int index = 0}) async {
-    Map res = await _channel.invokeMethod('getETHAddressWithIndex', {
-      "uuid": uuid,
-      "index": index,
+  Future<Map<int, String>> getEthAddressesWithIndexes(
+      {required List<int> indexes}) async {
+    Map res = await _channel.invokeMethod('getETHAddressesWithIndexes', {
+      'uuid': uuid,
+      'indexes': indexes,
     });
+    final data = res['data'] as Map;
+    return data.map((key, value) => MapEntry(key as int, value as String));
+  }
 
-    return res["data"];
+  Future<String> getETHAddressWithIndex({int index = 0}) async {
+    final addresses = await getEthAddressesWithIndexes(indexes: [index]);
+    final address = addresses[index];
+    if (address == null) {
+      throw Exception('Address not found');
+    }
+    return address;
   }
 
   Future<String> ethSignPersonalMessage(Uint8List bytes,
