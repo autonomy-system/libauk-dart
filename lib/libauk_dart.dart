@@ -2,50 +2,30 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-class LibAukDart {
-  static const MethodChannel _channel = const MethodChannel('libauk_dart');
 
+const MethodChannel _channel = const MethodChannel('libauk_dart');
+
+class LibAukDart {
   static WalletStorage getWallet(String uuid) {
     return WalletStorage(uuid);
   }
-
-  static Future<String> calculateFirstEthAddress(
-      String words, String? passphrase) async {
-    Map res = await _channel.invokeMethod('calculateFirstEthAddress',
-        {"words": words, "passphrase": passphrase ?? ""});
+  static Future<String> calculateFirstEthAddress(String words, String? passphrase) async {
+    Map res = await _channel.invokeMethod('calculateFirstEthAddress', {"words": words, "passphrase": passphrase ?? ""});
     return res["data"];
-  }
-
-  static Future<bool> toggleBiometric({required bool isEnable}) async {
-    final res =
-        await _channel.invokeMethod('toggleBiometric', {"isEnable": isEnable});
-    return res["data"];
-  }
-
-  static Future<bool> isBiometricEnabled() async {
-    final res = await _channel.invokeMethod('isBiometricEnabled');
-    return res["data"];
-  }
-
-  static Future<void> migrate() async {
-    await _channel.invokeMethod('migrate');
   }
 }
 
 class WalletStorage {
-  static const MethodChannel _channel = const MethodChannel('libauk_dart');
-
   final String uuid;
 
   WalletStorage(this.uuid);
 
   Future<void> createKey(String? passphrase, String name) async {
-    await _channel.invokeMethod('createKey',
-        {"uuid": uuid, "passphrase": passphrase ?? "", "name": name});
+    await _channel.invokeMethod(
+        'createKey', {"uuid": uuid, "passphrase": passphrase ?? "", "name": name});
   }
 
-  Future<void> importKey(
-      String words, String? passphrase, String name, int date) async {
+  Future<void> importKey( String words, String? passphrase, String name, int date) async {
     await _channel.invokeMethod('importKey', {
       "uuid": uuid,
       "words": words,
@@ -86,24 +66,23 @@ class WalletStorage {
 
   Future<String> getETHAddress({int index = 0}) async {
     Map res = await _channel.invokeMethod('getETHAddressWithIndex', {
-      "uuid": uuid,
-      "index": index,
-    });
+            "uuid": uuid,
+            "index": index,
+          });
 
     return res["data"];
   }
 
-  Future<String> ethSignPersonalMessage(Uint8List bytes,
-      {int index = 0}) async {
+  Future<String> ethSignPersonalMessage(Uint8List bytes, {int index = 0}) async {
     Map res = await _channel.invokeMethod('ethSignPersonalMessageWithIndex',
-        {"uuid": uuid, "message": bytes, "index": index});
+            {"uuid": uuid, "message": bytes, "index": index});
 
     return res["data"];
   }
 
   Future<String> ethSignMessage(Uint8List bytes, {int index = 0}) async {
     Map res = await _channel.invokeMethod('ethSignMessageWithIndex',
-        {"uuid": uuid, "message": bytes, "index": index});
+            {"uuid": uuid, "message": bytes, "index": index});
 
     return res["data"];
   }
@@ -156,17 +135,17 @@ class WalletStorage {
     int index = 0,
   }) async {
     Map res = await _channel.invokeMethod('ethSignTransaction1559WithIndex', {
-      "uuid": uuid,
-      "nonce": nonce.toString(),
-      "gasLimit": gasLimit.toString(),
-      "maxPriorityFeePerGas": maxPriorityFeePerGas.toString(),
-      "maxFeePerGas": maxFeePerGas.toString(),
-      "to": to,
-      "value": value.toString(),
-      "data": data,
-      "chainId": chainId,
-      "index": index
-    });
+            "uuid": uuid,
+            "nonce": nonce.toString(),
+            "gasLimit": gasLimit.toString(),
+            "maxPriorityFeePerGas": maxPriorityFeePerGas.toString(),
+            "maxFeePerGas": maxFeePerGas.toString(),
+            "to": to,
+            "value": value.toString(),
+            "data": data,
+            "chainId": chainId,
+            "index": index
+          });
 
     return res["data"];
   }
@@ -213,22 +192,21 @@ class WalletStorage {
 
   Future<String> getTezosPublicKey({int index = 0}) async {
     Map res = await _channel.invokeMethod(
-        'getTezosPublicKeyWithIndex', {"uuid": uuid, "index": index});
+            'getTezosPublicKeyWithIndex', {"uuid": uuid, "index": index});
 
     return res["data"];
   }
 
   Future<Uint8List> tezosSignMessage(Uint8List message, {int index = 0}) async {
     Map res = await _channel.invokeMethod('tezosSignMessageWithIndex',
-        {"uuid": uuid, "message": message, "index": index});
+            {"uuid": uuid, "message": message, "index": index});
 
     return res["data"];
   }
 
-  Future<Uint8List> tezosSignTransaction(String forgedHex,
-      {int index = 0}) async {
+  Future<Uint8List> tezosSignTransaction(String forgedHex, {int index = 0}) async {
     Map res = await _channel.invokeMethod('tezosSignTransactionWithIndex',
-        {"uuid": uuid, "forgedHex": forgedHex, "index": index});
+            {"uuid": uuid, "forgedHex": forgedHex, "index": index});
 
     return res["data"];
   }
