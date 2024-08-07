@@ -1,5 +1,6 @@
 package com.bitmark.libauk_dart
 
+import AddressIndex
 import android.app.Activity
 import android.content.Context
 import android.util.Log
@@ -10,6 +11,7 @@ import com.bitmark.libauk.storage.ETH_KEY_INFO_FILE_NAME
 import com.bitmark.libauk.util.BiometricUtil
 import com.bitmark.libauk.util.fromJson
 import com.bitmark.libauk.util.newGsonInstance
+import com.google.gson.Gson
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -89,12 +91,10 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "getAccountDIDSignature" -> {
                 getAccountDIDSignature(call, result)
             }
-            "getETHAddress" -> {
-                getETHAddress(call, result)
+            "getAddressesWithIndexes" -> {
+                getAddressesWithIndexes(call, result)
             }
-            "getETHAddressesWithIndexes" -> {
-                getETHAddressesWithIndexes(call, result)
-            }
+
             "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
             }
@@ -303,48 +303,23 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             .let { disposables.add(it) }
     }
 
-    private fun getETHAddress(call: MethodCall, result: Result) {
+    private  fun getAddressesWithIndexes(call: MethodCall, result: Result) {
         val id: String? = call.argument("uuid")
+        val listAddressIndexJson: List<String> = call.argument("addressIndexes") ?: error("missing addressIndexes")
+        val addressIndexes: List<AddressIndex> = listAddressIndexJson.map { newGsonInstance().fromJson(it) }
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .getETHAddress()
-            .subscribe({ address ->
+            .getAddresses(addressIndexes = addressIndexes)
+            .subscribe({ addresses ->
+                val addressMap = addresses.mapKeys { Gson().toJson(it.key).toString() }
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
-                rev["data"] = address
+                rev["data"] = addressMap
                 result.success(rev)
             }, {
                 it.printStackTrace()
-                result.error("getETHAddress error", it.message, it)
+                result.error("getAddresses error", it.message, it)
             })
             .let { disposables.add(it) }
-    }
-
-    private fun getETHAddressesWithIndexes(call: MethodCall, result: Result) {
-        val id: String? = call.argument("uuid")
-        val indexes: List<Int> = call.argument("indexes") ?: emptyList()
-
-        if (id.isNullOrEmpty()) {
-            result.error("InvalidArgument", "UUID is required", null)
-            return
-        }
-
-        try {
-            val uuid = UUID.fromString(id)
-            LibAuk.getInstance().getStorage(uuid, context)
-                .getETHAddressWithIndexes(indexes)
-                .subscribe({ addresses ->
-                    val rev: HashMap<String, Any> = hashMapOf(
-                        "error" to 0,
-                        "data" to addresses
-                    )
-                    result.success(rev)
-                }, { error ->
-                    error.printStackTrace()
-                    result.error("getETHAddress error", error.message, error)
-                }).let { disposables.add(it) }
-        } catch (e: IllegalArgumentException) {
-            result.error("InvalidUUID", "UUID format is invalid", e)
-        }
     }
 
     private fun signMessage(call: MethodCall, result: Result) {

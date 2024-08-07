@@ -1,6 +1,29 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:tezart/src/crypto/crypto.dart' as crypto;
+
+class LibaukAddressIndex {
+  final String chain;
+  final int index;
+
+  LibaukAddressIndex({required this.chain, required this.index});
+
+  factory LibaukAddressIndex.fromJson(Map<String, dynamic> json) {
+    return LibaukAddressIndex(
+      chain: json['chain'],
+      index: json['index'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'chain': chain,
+      'index': index,
+    };
+  }
+}
 
 class LibAukDart {
   static const MethodChannel _channel = const MethodChannel('libauk_dart');
@@ -84,14 +107,31 @@ class WalletStorage {
     return res["data"];
   }
 
-  Future<Map<int, String>> getEthAddressesWithIndexes(
-      {required List<int> indexes}) async {
-    Map res = await _channel.invokeMethod('getETHAddressesWithIndexes', {
+  Future<Map<LibaukAddressIndex, String>> getAddressesWithIndexes(
+      List<LibaukAddressIndex> addressIndexes) async {
+    final addressIndexesJson = addressIndexes.map((addressIndex) {
+      return addressIndex.toJson().toString();
+    }).toList();
+    Map res = await _channel.invokeMethod('getAddressesWithIndexes', {
       'uuid': uuid,
-      'indexes': indexes,
+      'addressIndexes': addressIndexesJson,
     });
     final data = res['data'] as Map;
-    return data.map((key, value) => MapEntry(key as int, value as String));
+    final Map<LibaukAddressIndex, String> map = data.map((key, value) {
+      final addressIndex = LibaukAddressIndex.fromJson(jsonDecode(key));
+      return MapEntry(addressIndex, value);
+    });
+    // cast to Map<LibaukAddressIndex, String>
+    return map;
+  }
+
+  Future<Map<int, String>> getEthAddressesWithIndexes(
+      {required List<int> indexes}) async {
+    final addressIndexes = indexes.map((index) {
+      return LibaukAddressIndex(chain: 'ethereum', index: index);
+    }).toList();
+    final res = await getAddressesWithIndexes(addressIndexes);
+    return res.map((key, value) => MapEntry(key.index, value as String));
   }
 
   Future<String> getETHAddressWithIndex({int index = 0}) async {
@@ -246,4 +286,14 @@ class WalletStorage {
   Future<void> removeKeys() async {
     await _channel.invokeMethod('removeKeys', {"uuid": uuid});
   }
+}
+
+extension LibaukDartWalletStorageExtension on WalletStorage {
+  Future<String> deriveTezosAddress({int index = 0}) async {
+    final publicKey = await getTezosPublicKey(index: index);
+    return crypto.addressFromPublicKey(publicKey);
+  }
+
+  String getTezosAddressFromPubKey(String publicKey) =>
+      crypto.addressFromPublicKey(publicKey);
 }

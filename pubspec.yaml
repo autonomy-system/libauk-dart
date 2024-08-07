@@ -10,6 +10,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  tezart:
+    git:
+      url: https://github.com/autonomy-system/tezart.git
+      ref: 7534512ff7c874251e5b1e1a426f5822a3837b51
 
 dev_dependencies:
   flutter_test:
