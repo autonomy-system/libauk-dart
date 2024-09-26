@@ -13,7 +13,6 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import org.web3j.crypto.Hash
 import org.web3j.crypto.RawTransaction
 import java.io.File
 import java.math.BigInteger
@@ -340,7 +339,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessage(message, true)
+            .ethSignMessage(message, false)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -358,7 +357,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val message: ByteArray = call.argument("message") ?: error("missing message")
         val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessageWithIndex(message, true, index)
+            .ethSignMessageWithIndex(message, false, index)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -375,7 +374,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessage(message.ethPersonalMessage(), false)
+            .ethSignMessage(message, true)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -393,7 +392,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val message: ByteArray = call.argument("message") ?: error("missing message")
         val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessageWithIndex(message.ethPersonalMessage(), false, index)
+            .ethSignMessageWithIndex(message, true, index)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -750,22 +749,4 @@ fun ByteArray.toHex(): String {
     }
 
     return result.toString()
-}
-
-fun ByteArray.ethPersonalMessage() = getEthereumMessageHash(this)
-
-fun getEthereumMessageHash(message: ByteArray): ByteArray {
-    val prefix = getEthereumMessagePrefix(message.size)
-
-    val result = ByteArray(prefix.size + message.size)
-    System.arraycopy(prefix, 0, result, 0, prefix.size)
-    System.arraycopy(message, 0, result, prefix.size, message.size)
-
-    return Hash.sha3(result)
-}
-
-const val MESSAGE_PREFIX = "\u0019Ethereum Signed Message:\n"
-
-fun getEthereumMessagePrefix(messageLength: Int): ByteArray {
-    return (MESSAGE_PREFIX + messageLength.toString()).toByteArray()
 }
