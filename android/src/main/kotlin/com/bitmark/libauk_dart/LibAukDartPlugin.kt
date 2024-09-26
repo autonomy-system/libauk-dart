@@ -13,8 +13,8 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import org.web3j.crypto.Hash
 import org.web3j.crypto.RawTransaction
-import org.web3j.crypto.Sign
 import java.io.File
 import java.math.BigInteger
 import java.util.*
@@ -41,90 +41,119 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "createKey" -> {
                 createKey(call, result)
             }
+
             "importKey" -> {
                 importKey(call, result)
             }
+
             "calculateFirstEthAddress" -> {
                 calculateFirstEthAddress(call, result)
             }
+
             "isWalletCreated" -> {
                 isWalletCreated(call, result)
             }
+
             "getName" -> {
                 getName(call, result)
             }
+
             "updateName" -> {
                 updateName(call, result)
             }
+
             "getAccountDID" -> {
                 getAccountDID(call, result)
             }
+
             "getAccountDIDSignature" -> {
                 getAccountDIDSignature(call, result)
             }
+
             "getETHAddress" -> {
                 getETHAddress(call, result)
             }
+
             "getETHAddressWithIndex" -> {
                 getETHAddressWithIndex(call, result)
             }
+
             "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
             }
+
             "ethSignPersonalMessageWithIndex" -> {
                 signPersonalMessageWithIndex(call, result)
             }
+
             "ethSignMessage" -> {
                 signMessage(call, result)
             }
+
             "ethSignMessageWithIndex" -> {
                 signMessageWithIndex(call, result)
             }
+
             "ethSignTransaction" -> {
                 signTransaction(call, result)
             }
+
             "ethSignTransactionWithIndex" -> {
                 signTransactionWithIndex(call, result)
             }
+
             "ethSignTransaction1559" -> {
                 signTransaction1559(call, result)
             }
+
             "ethSignTransaction1559WithIndex" -> {
                 signTransaction1559WithIndex(call, result)
             }
+
             "encryptFile" -> {
                 encryptFile(call, result)
             }
+
             "decryptFile" -> {
                 decryptFile(call, result)
             }
+
             "exportMnemonicPassphrase" -> {
                 exportMnemonicPassphrase(call, result)
             }
+
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
+
             "getTezosPublicKey" -> {
                 getTezosPublicKey(call, result)
             }
+
             "getTezosPublicKeyWithIndex" -> {
                 getTezosPublicKeyWithIndex(call, result)
             }
+
             "tezosSignMessage" -> {
                 tezosSignMessage(call, result)
             }
+
             "tezosSignMessageWithIndex" -> {
                 tezosSignMessageWithIndex(call, result)
             }
+
             "tezosSignTransaction" -> {
                 tezosSignTransaction(call, result)
             }
+
             "tezosSignTransactionWithIndex" -> {
                 tezosSignTransactionWithIndex(call, result)
             }
+
             "removeKeys" -> {
                 removeKeys(call, result)
             }
+
             else -> {
                 result.notImplemented()
             }
@@ -420,8 +449,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val data: String = call.argument("data") ?: ""
         val chainId: Int = call.argument("chainId") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
-            chainId.toLong(),
             BigInteger(nonce),
+            BigInteger(maxFeePerGas),
             BigInteger(gasLimit),
             to,
             BigInteger(value),
@@ -456,8 +485,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val chainId: Int = call.argument("chainId") ?: 0
         val index: Int = call.argument("index") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
-            chainId.toLong(),
             BigInteger(nonce),
+            BigInteger(maxFeePerGas),
             BigInteger(gasLimit),
             to,
             BigInteger(value),
@@ -723,4 +752,20 @@ fun ByteArray.toHex(): String {
     return result.toString()
 }
 
-fun ByteArray.ethPersonalMessage() = Sign.getEthereumMessageHash(this)
+fun ByteArray.ethPersonalMessage() = getEthereumMessageHash(this)
+
+fun getEthereumMessageHash(message: ByteArray): ByteArray {
+    val prefix = getEthereumMessagePrefix(message.size)
+
+    val result = ByteArray(prefix.size + message.size)
+    System.arraycopy(prefix, 0, result, 0, prefix.size)
+    System.arraycopy(message, 0, result, prefix.size, message.size)
+
+    return Hash.sha3(result)
+}
+
+const val MESSAGE_PREFIX = "\u0019Ethereum Signed Message:\n"
+
+fun getEthereumMessagePrefix(messageLength: Int): ByteArray {
+    return (MESSAGE_PREFIX + messageLength.toString()).toByteArray()
+}

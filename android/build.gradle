@@ -48,4 +48,5 @@ dependencies {
     }
     implementation 'org.web3j:core:5.0.0'
     implementation 'io.camlcase:kotlintezos:2.0.2'
+    implementation 'androidx.annotation:annotation-jvm:1.8.2'
 }
