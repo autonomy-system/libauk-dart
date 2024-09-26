@@ -14,7 +14,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import org.web3j.crypto.RawTransaction
-import org.web3j.crypto.Sign
 import java.io.File
 import java.math.BigInteger
 import java.util.*
@@ -41,90 +40,119 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
             "createKey" -> {
                 createKey(call, result)
             }
+
             "importKey" -> {
                 importKey(call, result)
             }
+
             "calculateFirstEthAddress" -> {
                 calculateFirstEthAddress(call, result)
             }
+
             "isWalletCreated" -> {
                 isWalletCreated(call, result)
             }
+
             "getName" -> {
                 getName(call, result)
             }
+
             "updateName" -> {
                 updateName(call, result)
             }
+
             "getAccountDID" -> {
                 getAccountDID(call, result)
             }
+
             "getAccountDIDSignature" -> {
                 getAccountDIDSignature(call, result)
             }
+
             "getETHAddress" -> {
                 getETHAddress(call, result)
             }
+
             "getETHAddressWithIndex" -> {
                 getETHAddressWithIndex(call, result)
             }
+
             "ethSignPersonalMessage" -> {
                 signPersonalMessage(call, result)
             }
+
             "ethSignPersonalMessageWithIndex" -> {
                 signPersonalMessageWithIndex(call, result)
             }
+
             "ethSignMessage" -> {
                 signMessage(call, result)
             }
+
             "ethSignMessageWithIndex" -> {
                 signMessageWithIndex(call, result)
             }
+
             "ethSignTransaction" -> {
                 signTransaction(call, result)
             }
+
             "ethSignTransactionWithIndex" -> {
                 signTransactionWithIndex(call, result)
             }
+
             "ethSignTransaction1559" -> {
                 signTransaction1559(call, result)
             }
+
             "ethSignTransaction1559WithIndex" -> {
                 signTransaction1559WithIndex(call, result)
             }
+
             "encryptFile" -> {
                 encryptFile(call, result)
             }
+
             "decryptFile" -> {
                 decryptFile(call, result)
             }
+
             "exportMnemonicPassphrase" -> {
                 exportMnemonicPassphrase(call, result)
             }
+
             "exportMnemonicWords" -> {
                 exportMnemonicWords(call, result)
             }
+
             "getTezosPublicKey" -> {
                 getTezosPublicKey(call, result)
             }
+
             "getTezosPublicKeyWithIndex" -> {
                 getTezosPublicKeyWithIndex(call, result)
             }
+
             "tezosSignMessage" -> {
                 tezosSignMessage(call, result)
             }
+
             "tezosSignMessageWithIndex" -> {
                 tezosSignMessageWithIndex(call, result)
             }
+
             "tezosSignTransaction" -> {
                 tezosSignTransaction(call, result)
             }
+
             "tezosSignTransactionWithIndex" -> {
                 tezosSignTransactionWithIndex(call, result)
             }
+
             "removeKeys" -> {
                 removeKeys(call, result)
             }
+
             else -> {
                 result.notImplemented()
             }
@@ -311,7 +339,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessage(message, true)
+            .ethSignMessage(message, false)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -329,7 +357,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val message: ByteArray = call.argument("message") ?: error("missing message")
         val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessageWithIndex(message, true, index)
+            .ethSignMessageWithIndex(message, false, index)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -346,7 +374,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val id: String? = call.argument("uuid")
         val message: ByteArray = call.argument("message") ?: error("missing message")
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessage(message.ethPersonalMessage(), false)
+            .ethSignMessage(message, true)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -364,7 +392,7 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val message: ByteArray = call.argument("message") ?: error("missing message")
         val index: Int = call.argument("index") ?: 0
         LibAuk.getInstance().getStorage(UUID.fromString(id), context)
-            .ethSignMessageWithIndex(message.ethPersonalMessage(), false, index)
+            .ethSignMessageWithIndex(message, true, index)
             .subscribe({ sigData ->
                 val rev: HashMap<String, Any> = HashMap()
                 rev["error"] = 0
@@ -420,8 +448,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val data: String = call.argument("data") ?: ""
         val chainId: Int = call.argument("chainId") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
-            chainId.toLong(),
             BigInteger(nonce),
+            BigInteger(maxFeePerGas),
             BigInteger(gasLimit),
             to,
             BigInteger(value),
@@ -456,8 +484,8 @@ class LibAukDartPlugin : FlutterPlugin, MethodCallHandler {
         val chainId: Int = call.argument("chainId") ?: 0
         val index: Int = call.argument("index") ?: 0
         val rawTransaction = RawTransaction.createTransaction(
-            chainId.toLong(),
             BigInteger(nonce),
+            BigInteger(maxFeePerGas),
             BigInteger(gasLimit),
             to,
             BigInteger(value),
@@ -722,5 +750,3 @@ fun ByteArray.toHex(): String {
 
     return result.toString()
 }
-
-fun ByteArray.ethPersonalMessage() = Sign.getEthereumMessageHash(this)
