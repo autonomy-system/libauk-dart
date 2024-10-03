@@ -33,7 +33,7 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 29
+        minSdkVersion 24
     }
 }
 
@@ -42,7 +42,7 @@ dependencies {
     // Rx2
     implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
     implementation "io.reactivex.rxjava2:rxandroid:2.1.1"
-    implementation('com.github.bitmark-inc:libauk-kotlin:ef1e3a844b') {
+    implementation('com.github.bitmark-inc:libauk-kotlin:ad1e48120f') {
         exclude group: 'com.google.protobuf'
         exclude module: 'jetified-protobuf-java'
     }
